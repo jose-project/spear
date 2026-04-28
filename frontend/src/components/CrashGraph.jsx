@@ -703,16 +703,32 @@ const FIG_LEG    = 30   // full leg proportion
 const FIG_ARM    = 13
 const FIG_SCALE  = 1.3  // uniform character scale — makes figure larger on screen
 
-// Flat vector athlete palette — matches reference illustration
-const C_SKIN    = '#D4793A'   // warm orange-tan skin
-const C_SKIN_H  = '#E8945A'   // lighter warm skin for highlights
-const C_HAIR    = '#1A0800'   // near-black hair
-const C_SHIRT   = '#1A56A8'   // competition blue singlet
-const C_SHIRT_H = '#2E7FD4'   // lighter blue highlight
-const C_PANTS   = '#0C0C22'   // dark navy athletic shorts
-const C_PANTS_H = '#18183A'   // dark navy highlight
-const C_SHOE    = '#B0B0B0'   // grey performance shoes
-const C_OUTLINE = '#0D0D0D'   // kept for reference, not used on limbs
+// Flat vector athlete palette — skin/hair are fixed; clothing rotates per round
+const C_SKIN    = '#D4793A'
+const C_SKIN_H  = '#E8945A'
+const C_HAIR    = '#1A0800'
+const C_OUTLINE = '#0D0D0D'
+
+let C_SHIRT   = '#1A56A8'
+let C_SHIRT_H = '#2E7FD4'
+let C_PANTS   = '#0C0C22'
+let C_PANTS_H = '#18183A'
+let C_SHOE    = '#B0B0B0'
+
+const COSTUMES = [
+  { shirt: '#1A56A8', shirtH: '#2E7FD4', pants: '#0C0C22', pantsH: '#18183A', shoe: '#B0B0B0' }, // royal blue
+  { shirt: '#B91C1C', shirtH: '#EF4444', pants: '#1A0C0C', pantsH: '#2D1616', shoe: '#C8C8C8' }, // red
+  { shirt: '#166534', shirtH: '#22C55E', pants: '#0A1A0C', pantsH: '#142018', shoe: '#AAAAAA' }, // forest green
+  { shirt: '#6D28D9', shirtH: '#9333EA', pants: '#12081C', pantsH: '#1E1030', shoe: '#C0B8CC' }, // purple
+  { shirt: '#B45309', shirtH: '#F59E0B', pants: '#1A1208', pantsH: '#2A1E10', shoe: '#C8C0A8' }, // gold/amber
+]
+
+function applyCostume(idx) {
+  const c = COSTUMES[idx % COSTUMES.length]
+  C_SHIRT = c.shirt; C_SHIRT_H = c.shirtH
+  C_PANTS = c.pants; C_PANTS_H = c.pantsH
+  C_SHOE  = c.shoe
+}
 
 // Flat vector featureless head — smooth silhouette, no facial features, matches reference illustration
 function figHead(ctx, cx, cy) {
@@ -1755,6 +1771,7 @@ export default function CrashGraph({ phase, multiplier, crashPoint, countdown })
   const explosionOrigin    = useRef(null)
   const crashSpearRef      = useRef(null)
   const crashImpactFiredRef = useRef(false)
+  const costumeRef         = useRef(null)
   const spriteRef       = useRef(null)
   const spearImgRef     = useRef(null)
   useEffect(() => {
@@ -1780,6 +1797,10 @@ export default function CrashGraph({ phase, multiplier, crashPoint, countdown })
       pointsRef.current = []; startRef.current = null; crashTimeRef.current = null
       trailRef.current = []; particlesRef.current = []
       scrollRef.current = 0   // background is fully static during the countdown
+
+      // Pick a new random costume once per round (costumeRef is reset to null by the crashed phase)
+      if (costumeRef.current === null) costumeRef.current = Math.floor(Math.random() * COSTUMES.length)
+      applyCostume(costumeRef.current)
 
       // countdown ticks every 100 ms, which re-runs this effect each tick.
       // To avoid jumps on every re-run, derive figX / legPhase
@@ -1851,6 +1872,10 @@ export default function CrashGraph({ phase, multiplier, crashPoint, countdown })
       trailRef.current = []; particlesRef.current = []; ringTimerRef.current = 0
       hoopRef.current = []; hoopSpawnTimerRef.current = 1200
       legPhaseRef.current = 0
+
+      // Carry the waiting-phase costume through, or pick one if joining mid-round
+      if (costumeRef.current === null) costumeRef.current = Math.floor(Math.random() * COSTUMES.length)
+      applyCostume(costumeRef.current)
 
       const loop = (ts) => {
         tRef.current++
@@ -2031,6 +2056,7 @@ export default function CrashGraph({ phase, multiplier, crashPoint, countdown })
       // Capture spear's last tip position for the fall animation
       crashSpearRef.current = null
       crashImpactFiredRef.current = false
+      costumeRef.current = null   // trigger fresh pick next waiting phase
       if (trailRef.current.length > 0) {
         const last = trailRef.current[trailRef.current.length - 1]
         crashSpearRef.current = { tipX: last.x, tipY: last.y }
