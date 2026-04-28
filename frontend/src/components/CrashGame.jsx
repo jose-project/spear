@@ -176,68 +176,6 @@ export default function CrashGame() {
         {/* Round status + betting panel */}
         <div className={styles.panelCol}>
 
-          {/* Round status — visible to everyone */}
-          <div className={styles.roundStatus}>
-
-            <div className={styles.statusRow}>
-              <div className={`${styles.statusBadge} ${
-                phase === 'running' ? styles.badgeRunning :
-                phase === 'crashed' ? styles.badgeCrashed :
-                styles.badgeWaiting
-              }`}>
-                <div className={`${styles.statusDot} ${
-                  phase === 'running' ? styles.dotRunning :
-                  phase === 'crashed' ? styles.dotCrashed :
-                  styles.dotWaiting
-                }`} />
-                <span className={styles.statusText}>Round Status</span>
-              </div>
-              {phase === 'running' && (
-                <div className={styles.liveIndicator}>
-                  <span className={styles.liveText}>LIVE</span>
-                </div>
-              )}
-            </div>
-
-            <div className={styles.multiplierSection}>
-              <div className={styles.multiplierLabel}>Multiplier</div>
-              <div>
-                <span className={`${styles.multiplierValue} ${
-                  phase === 'running' ? styles.multRunning :
-                  phase === 'crashed' ? styles.multCrashed :
-                  styles.multWaiting
-                }`}>
-                  {phase === 'crashed' ? crashPoint?.toFixed(2) : multiplier.toFixed(2)}
-                </span>
-                <span className={`${styles.multiplierSymbol} ${
-                  phase === 'running' ? styles.multRunning :
-                  phase === 'crashed' ? styles.multCrashed :
-                  styles.multWaiting
-                }`}>×</span>
-              </div>
-            </div>
-{/* 
-            <div className={styles.infoRow}>
-              <div className={styles.infoItem}>
-                <div className={styles.infoLabel}>Status</div>
-                <div className={styles.infoValue}>
-                  {phase === 'waiting' ? 'Waiting' : phase === 'running' ? 'Live' : 'Crashed'}
-                </div>
-              </div>
-              <div className={styles.infoItem}>
-                <div className={styles.infoLabel}>{phase === 'waiting' ? 'Starting In' : 'Multiplier'}</div>
-                <div className={styles.infoValue}>
-                  {phase === 'waiting'
-                    ? `${countdown.toFixed(1)}s`
-                    : phase === 'crashed'
-                    ? `${crashPoint?.toFixed(2)}×`
-                    : `${multiplier.toFixed(2)}×`}
-                </div>
-              </div>
-            </div> */}
-
-          </div>
-
           {/* Betting controls (logged in or demo) or login prompt */}
           {(user || demoMode) ? (
             <BettingPanel {...game} />

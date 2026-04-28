@@ -285,10 +285,7 @@ export default function BettingPanel({
 
       {/* Shared balance header */}
       <div className={styles.panelHeader}>
-        <span className={styles.panelHeaderLabel}>Balance</span>
-        <span className={styles.panelBalance}>
-          {Number(balance ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-        </span>
+        <span className={styles.panelHeaderLabel}>Place Bet</span>
       </div>
 
       {/* All three slots side by side */}
