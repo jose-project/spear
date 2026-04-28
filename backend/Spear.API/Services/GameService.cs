@@ -1,0 +1,154 @@
+using System.Security.Cryptography;
+using System.Text;
+using Microsoft.EntityFrameworkCore;
+using Spear.API.Data;
+using Spear.API.Models.DTOs.Game;
+using Spear.API.Models.Entities;
+using Spear.API.Models.Enums;
+
+namespace Spear.API.Services;
+
+public class GameService(AppDbContext db) : IGameService
+{
+    private const double HouseEdge = 0.01;
+
+    public async Task<GameRoundDto?> GetCurrentRoundAsync()
+    {
+        var round = await db.GameRounds
+            .Where(r => r.State == GameState.Waiting || r.State == GameState.Running)
+            .OrderByDescending(r => r.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        return round is null ? null : MapToDto(round);
+    }
+
+    public async Task<GameRoundDto?> GetRoundByIdAsync(Guid roundId)
+    {
+        var round = await db.GameRounds.FindAsync(roundId);
+        return round is null ? null : MapToDto(round);
+    }
+
+    public async Task<List<GameHistoryDto>> GetHistoryAsync(int count = 20)
+    {
+        return await db.GameRounds
+            .Where(r => r.State == GameState.Crashed && r.CrashPoint.HasValue)
+            .OrderByDescending(r => r.EndedAt)
+            .Take(count)
+            .Select(r => new GameHistoryDto
+            {
+                Id = r.Id,
+                RoundNumber = r.RoundNumber,
+                CrashPoint = r.CrashPoint!.Value,
+                EndedAt = r.EndedAt!.Value
+            })
+            .ToListAsync();
+    }
+
+    public async Task<string> GetRoundHashAsync(Guid roundId)
+    {
+        var round = await db.GameRounds.FindAsync(roundId)
+            ?? throw new KeyNotFoundException("Round not found.");
+
+        return round.Hash;
+    }
+
+    public async Task<GameRoundDto> CreateRoundAsync()
+    {
+        var lastRound = await db.GameRounds.OrderByDescending(r => r.RoundNumber).FirstOrDefaultAsync();
+        var roundNumber = (lastRound?.RoundNumber ?? 0) + 1;
+
+        var serverSeed = GenerateServerSeed();
+        var hash = ComputeHash(serverSeed);
+        var crashPoint = ComputeCrashPoint(serverSeed);
+
+        var round = new GameRound
+        {
+            RoundNumber = roundNumber,
+            ServerSeed = serverSeed,
+            Hash = hash,
+            CrashPoint = crashPoint,
+            State = GameState.Waiting
+        };
+
+        db.GameRounds.Add(round);
+        await db.SaveChangesAsync();
+
+        return MapToDto(round);
+    }
+
+    public async Task<GameRoundDto> StartRoundAsync(Guid roundId)
+    {
+        var round = await db.GameRounds.FindAsync(roundId)
+            ?? throw new KeyNotFoundException("Round not found.");
+
+        round.State = GameState.Running;
+        round.StartedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+
+        return MapToDto(round);
+    }
+
+    public async Task<GameRoundDto> CrashRoundAsync(Guid roundId, decimal crashPoint)
+    {
+        var round = await db.GameRounds.FindAsync(roundId)
+            ?? throw new KeyNotFoundException("Round not found.");
+
+        round.State = GameState.Crashed;
+        round.EndedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+
+        return MapToDto(round);
+    }
+
+    private static decimal ComputeCrashPoint(string seed)
+    {
+        var hash = ComputeHash(seed);
+        var hex = hash[..8];
+        var value = Convert.ToInt64(hex, 16);
+        var r = (double)value / 0xFFFFFFFFL;
+
+        if (r < HouseEdge) return 1.0m;
+
+        var multiplier = Math.Max(1.0, 1.0 / (1.0 - r) * (1.0 - HouseEdge));
+        return Math.Round((decimal)multiplier, 2);
+    }
+
+    private static string ComputeHash(string input)
+    {
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(input));
+        return Convert.ToHexStringLower(bytes);
+    }
+
+    private static string GenerateServerSeed()
+    {
+        var bytes = new byte[32];
+        RandomNumberGenerator.Fill(bytes);
+        return Convert.ToHexStringLower(bytes);
+    }
+
+    private const int WaitingMs = 5000;
+
+    private static GameRoundDto MapToDto(GameRound round)
+    {
+        var elapsedMs = round.StartedAt.HasValue && round.State == GameState.Running
+            ? (DateTime.UtcNow - round.StartedAt.Value).TotalMilliseconds
+            : (double?)null;
+
+        var remainingWaitMs = round.State == GameState.Waiting
+            ? Math.Max(0, WaitingMs - (DateTime.UtcNow - round.CreatedAt).TotalMilliseconds)
+            : (double?)null;
+
+        return new GameRoundDto
+        {
+            Id = round.Id,
+            RoundNumber = round.RoundNumber,
+            State = round.State.ToString(),
+            CrashPoint = round.State == GameState.Crashed ? round.CrashPoint : null,
+            Hash = round.Hash,
+            StartedAt = round.StartedAt,
+            EndedAt = round.EndedAt,
+            ElapsedMs = elapsedMs,
+            RemainingWaitMs = remainingWaitMs
+        };
+    }
+}

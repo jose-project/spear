@@ -1,0 +1,110 @@
+.container {
+  overflow-y: auto;
+  max-height: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 6px;
+}
+
+.container::-webkit-scrollbar { width: 3px; }
+.container::-webkit-scrollbar-track { background: transparent; }
+.container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+/* ── Row card ── */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border-left: 3px solid transparent;
+  transition: background 0.1s;
+}
+
+.rowWon  { background: rgba(34, 197, 94, 0.06);  border-left-color: #22c55e; }
+.rowLost { background: rgba(239, 68, 68, 0.06);  border-left-color: #ef4444; }
+.rowPlaying { background: rgba(56, 189, 248, 0.05); border-left-color: #38bdf8; }
+.rowWon:hover  { background: rgba(34, 197, 94, 0.10); }
+.rowLost:hover { background: rgba(239, 68, 68, 0.10); }
+.rowPlaying:hover { background: rgba(56, 189, 248, 0.09); }
+
+/* Status pill */
+.pill {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  width: 38px;
+  text-align: center;
+}
+.pillWon    { background: rgba(34, 197, 94, 0.15);  color: #22c55e; }
+.pillLost   { background: rgba(239, 68, 68, 0.15);  color: #ef4444; }
+.pillPlaying { background: rgba(56, 189, 248, 0.15); color: #38bdf8; animation: playingPulse 1.4s ease-in-out infinite; }
+
+@keyframes playingPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+/* Left: round / player */
+.meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.metaTop {
+  font-size: 12px;
+  font-weight: 600;
+  color: #cbd5e6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.metaSub {
+  font-size: 11px;
+  color: #4b5563;
+}
+
+/* Center: multiplier badge */
+.multBadge {
+  font-size: 13px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+.multWon   { color: #22c55e; }
+.multLost  { color: #ef4444; }
+.multNone  { color: #4b5563; }
+
+/* Right: profit */
+.profit {
+  font-size: 13px;
+  font-weight: 800;
+  flex-shrink: 0;
+  min-width: 54px;
+  text-align: right;
+}
+.profitPos { color: #22c55e; }
+.profitNeg { color: #ef4444; }
+
+/* Empty state */
+.empty {
+  color: #4b5563;
+  font-size: 13px;
+  text-align: center;
+  padding: 28px 0;
+  font-style: italic;
+}
+
+@media (max-width: 700px) {
+  .pill    { font-size: 9px; padding: 2px 5px; width: 32px; }
+  .metaTop { font-size: 11px; }
+  .metaSub { font-size: 10px; }
+  .multBadge { font-size: 12px; }
+  .profit  { font-size: 12px; min-width: 44px; }
+}

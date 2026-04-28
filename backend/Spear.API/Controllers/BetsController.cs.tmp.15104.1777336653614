@@ -1,0 +1,83 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using Spear.API.Hubs;
+using Spear.API.Models.DTOs.Bet;
+using Spear.API.Models.DTOs.Wallet;
+using Spear.API.Services;
+
+namespace Spear.API.Controllers;
+
+[ApiController]
+[Route("api/bets")]
+[Authorize]
+[Produces("application/json")]
+public class BetsController(IBetService betService, IHubContext<GameHub> hubContext) : ControllerBase
+{
+    [HttpPost]
+    [ProducesResponseType(typeof(BetResultDto), 201)]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(409)]
+    public async Task<IActionResult> PlaceBet([FromBody] PlaceBetRequest request)
+    {
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var username = User.FindFirstValue(ClaimTypes.Name) ?? "Unknown";
+        var result = await betService.PlaceBetAsync(userId, request);
+        await hubContext.Clients.All.SendAsync("PlayerBetPlaced", new
+        {
+            betId = result.Id,
+            username,
+            amount = result.Amount
+        });
+        return CreatedAtAction(nameof(PlaceBet), result);
+    }
+
+    [HttpPost("{betId:guid}/cashout")]
+    [ProducesResponseType(typeof(BetResultDto), 200)]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(404)]
+    public async Task<IActionResult> Cashout(Guid betId)
+    {
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var username = User.FindFirstValue(ClaimTypes.Name) ?? "Unknown";
+        var result = await betService.CashoutAsync(userId, betId);
+        await hubContext.Clients.All.SendAsync("PlayerCashedOut", new
+        {
+            betId = result.Id,
+            username,
+            amount = result.Amount,
+            multiplier = result.CashedOutAt,
+            profit = result.Profit
+        });
+        return Ok(result);
+    }
+
+    [HttpGet("me")]
+    [ProducesResponseType(typeof(PagedResult<BetResultDto>), 200)]
+    public async Task<IActionResult> GetMyBets([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    {
+        pageSize = Math.Clamp(pageSize, 1, 100);
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var result = await betService.GetUserBetsAsync(userId, page, pageSize);
+        return Ok(result);
+    }
+
+    [HttpGet("me/active")]
+    [ProducesResponseType(typeof(List<ActiveBetDto>), 200)]
+    public async Task<IActionResult> GetActiveBets()
+    {
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var bets = await betService.GetActiveBetsAsync(userId);
+        return Ok(bets);
+    }
+
+    [HttpGet("{roundId:guid}/all")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(List<BetResultDto>), 200)]
+    public async Task<IActionResult> GetRoundBets(Guid roundId)
+    {
+        var bets = await betService.GetRoundBetsAsync(roundId);
+        return Ok(bets);
+    }
+}

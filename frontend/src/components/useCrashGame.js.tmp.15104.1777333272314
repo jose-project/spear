@@ -1,0 +1,822 @@
+import { useState, useRef, useCallback, useEffect } from 'react'
+import * as signalR from '@microsoft/signalr'
+import { useAuth } from '../contexts/AuthContext'
+import { getToken, BASE_URL } from '../api/client'
+import { placeBet as apiPlaceBet, cashout as apiCashout, getMyBets, getActiveBets } from '../api/bets'
+import { getHistory, getCurrentRound } from '../api/games'
+
+function loadFromStorage(key, defaultValue) {
+  try {
+    const stored = localStorage.getItem(key)
+    if (stored === null) return defaultValue
+    return JSON.parse(stored)
+  } catch {
+    return defaultValue
+  }
+}
+
+export function useCrashGame() {
+  const { user, updateBalance, demoMode, demoBalance, updateDemoBalance } = useAuth()
+
+  const [phase, setPhase] = useState('waiting')
+  const [multiplier, setMultiplier] = useState(1.0)
+  const [crashPoint, setCrashPoint] = useState(null)
+  const [countdown, setCountdown] = useState(5)
+
+  // Bet 1
+  const [betAmount, setBetAmount] = useState(10)
+  const [autoCashout, setAutoCashout] = useState(() => loadFromStorage('spear_autoCashout', ''))
+  const [autoCashoutEnabled, setAutoCashoutEnabled] = useState(() => loadFromStorage('spear_autoCashoutEnabled', false))
+  const [betPlaced, setBetPlaced] = useState(false)
+  const [cashedOut, setCashedOut] = useState(false)
+  const [cashedOutAt, setCashedOutAt] = useState(null)
+  const [lastWin, setLastWin] = useState(null)
+  const [autoBet, setAutoBetState] = useState(() => loadFromStorage('spear_autoBet', false))
+  const [autoBetCount, setAutoBetCount] = useState(0)
+  const [autoBetLimit, setAutoBetLimitState] = useState(() => loadFromStorage('spear_autoBetLimit', 0))
+
+  // Bet 2
+  const [bet2Amount, setBet2Amount] = useState(10)
+  const [autoCashout2, setAutoCashout2] = useState(() => loadFromStorage('spear_autoCashout2', ''))
+  const [autoCashout2Enabled, setAutoCashout2Enabled] = useState(() => loadFromStorage('spear_autoCashout2Enabled', false))
+  const [bet2Placed, setBet2Placed] = useState(false)
+  const [cashedOut2, setCashedOut2] = useState(false)
+  const [cashedOut2At, setCashedOut2At] = useState(null)
+  const [lastWin2, setLastWin2] = useState(null)
+  const [autoBet2, setAutoBet2State] = useState(() => loadFromStorage('spear_autoBet2', false))
+  const [autoBetCount2, setAutoBetCount2] = useState(0)
+  const [autoBetLimit2, setAutoBetLimit2State] = useState(() => loadFromStorage('spear_autoBetLimit2', 0))
+
+  const [history, setHistory] = useState([])
+  const [betHistory, setBetHistory] = useState([])
+  const [liveBets, setLiveBets] = useState([])
+  const [nextRoundBet, setNextRoundBet] = useState(false)
+  const [nextRoundBet2, setNextRoundBet2] = useState(false)
+  const [error, setError] = useState(null)
+  const [connected, setConnected] = useState(false)
+
+  // Refs for use inside closures (SignalR handlers)
+  const phaseRef = useRef('waiting')
+  const betPlacedRef = useRef(false)
+  const cashedOutRef = useRef(false)
+  const currentBetIdRef = useRef(null)
+  const pendingBetAmountRef = useRef(0)
+  const bet2PlacedRef = useRef(false)
+  const cashedOut2Ref = useRef(false)
+  const currentBet2IdRef = useRef(null)
+  const pendingBet2AmountRef = useRef(0)
+  const countdownIntervalRef = useRef(null)
+  const userRef = useRef(user)
+  const autoBetRef = useRef(loadFromStorage('spear_autoBet', false))
+  const autoBetCountRef = useRef(0)
+  const autoBetLimitRef = useRef(loadFromStorage('spear_autoBetLimit', 0))
+  const autoBet2Ref = useRef(loadFromStorage('spear_autoBet2', false))
+  const autoBetCount2Ref = useRef(0)
+  const autoBetLimit2Ref = useRef(loadFromStorage('spear_autoBetLimit2', 0))
+  const currentRoundNumberRef = useRef(null)
+  const placeBetRef = useRef(null)
+  const placeBet2Ref = useRef(null)
+  const updateBalanceRef = useRef(updateBalance)
+  const prevUserIdRef = useRef(undefined)
+
+  // Next-round queued bet refs
+  const nextRoundBetRef = useRef(false)
+  const nextRoundBet2Ref = useRef(false)
+
+  // Demo mode refs
+  const demoModeRef = useRef(demoMode)
+  const updateDemoBalanceRef = useRef(updateDemoBalance)
+  const multiplierRef = useRef(1.0)
+  const demoBet1AutoCashoutRef = useRef(null)
+  const demoBet2AutoCashoutRef = useRef(null)
+
+  useEffect(() => { userRef.current = user }, [user])
+  useEffect(() => { updateBalanceRef.current = updateBalance }, [updateBalance])
+  useEffect(() => { demoModeRef.current = demoMode }, [demoMode])
+  useEffect(() => { updateDemoBalanceRef.current = updateDemoBalance }, [updateDemoBalance])
+  useEffect(() => { nextRoundBetRef.current = nextRoundBet }, [nextRoundBet])
+  useEffect(() => { nextRoundBet2Ref.current = nextRoundBet2 }, [nextRoundBet2])
+
+  // Persist auto settings across page refreshes
+  useEffect(() => { localStorage.setItem('spear_autoCashout', JSON.stringify(autoCashout)) }, [autoCashout])
+  useEffect(() => { localStorage.setItem('spear_autoCashoutEnabled', JSON.stringify(autoCashoutEnabled)) }, [autoCashoutEnabled])
+  useEffect(() => { localStorage.setItem('spear_autoBet', JSON.stringify(autoBet)) }, [autoBet])
+  useEffect(() => { localStorage.setItem('spear_autoBetLimit', JSON.stringify(autoBetLimit)) }, [autoBetLimit])
+  useEffect(() => { localStorage.setItem('spear_autoCashout2', JSON.stringify(autoCashout2)) }, [autoCashout2])
+  useEffect(() => { localStorage.setItem('spear_autoCashout2Enabled', JSON.stringify(autoCashout2Enabled)) }, [autoCashout2Enabled])
+  useEffect(() => { localStorage.setItem('spear_autoBet2', JSON.stringify(autoBet2)) }, [autoBet2])
+  useEffect(() => { localStorage.setItem('spear_autoBetLimit2', JSON.stringify(autoBetLimit2)) }, [autoBetLimit2])
+
+  // Fetches the current round from the server and syncs phase / multiplier / countdown.
+  // Called every time a SignalR connection is (re)established so the UI is always current.
+  const syncCurrentRound = useCallback(async () => {
+    try {
+      const round = await getCurrentRound()
+      if (round.state === 'Running') {
+        clearInterval(countdownIntervalRef.current)
+        phaseRef.current = 'running'
+        setPhase('running')
+        const elapsed = round.elapsedMs ?? 0
+        const m = parseFloat(Math.pow(Math.E, 0.00006 * elapsed).toFixed(2))
+        setMultiplier(Math.max(1.0, m))
+      } else if (round.state === 'Waiting') {
+        phaseRef.current = 'waiting'
+        setPhase('waiting')
+        clearInterval(countdownIntervalRef.current)
+        let secs = (round.remainingWaitMs ?? 5000) / 1000
+        setCountdown(Math.max(0, secs))
+        countdownIntervalRef.current = setInterval(() => {
+          secs -= 0.1
+          setCountdown(Math.max(0, parseFloat(secs.toFixed(1))))
+        }, 100)
+      }
+    } catch {
+      // No active round — keep current state
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Load round history once on mount
+  useEffect(() => {
+    getHistory(15)
+      .then(h => setHistory(h.map(r => ({ value: Number(r.crashPoint), id: r.id }))))
+      .catch(() => {})
+  }, [])
+
+  // Reset bet state and reload user data when the logged-in user changes (login / logout).
+  // Intentionally depends on userId only — not the full user object — so balance updates
+  // via updateBalance() do NOT re-trigger this and wipe betPlaced.
+  const userId = user?.id
+  useEffect(() => {
+    // Detect actual user change (login/logout) vs initial page load
+    const isUserChange = prevUserIdRef.current !== undefined && prevUserIdRef.current !== userId
+    prevUserIdRef.current = userId
+
+    // Reset bet 1 state
+    setBetPlaced(false)
+    betPlacedRef.current = false
+    cashedOutRef.current = false
+    setCashedOut(false)
+    setCashedOutAt(null)
+    setLastWin(null)
+    currentBetIdRef.current = null
+    demoBet1AutoCashoutRef.current = null
+
+    // Reset bet 2 state
+    setBet2Placed(false)
+    bet2PlacedRef.current = false
+    cashedOut2Ref.current = false
+    setCashedOut2(false)
+    setCashedOut2At(null)
+    setLastWin2(null)
+    currentBet2IdRef.current = null
+    demoBet2AutoCashoutRef.current = null
+
+    setError(null)
+
+    // Only reset auto bet toggles on login/logout, not on page refresh with same user
+    if (isUserChange) {
+      setAutoBetState(false)
+      autoBetRef.current = false
+      setAutoBetCount(0)
+      autoBetCountRef.current = 0
+      setAutoBet2State(false)
+      autoBet2Ref.current = false
+      setAutoBetCount2(0)
+      autoBetCount2Ref.current = 0
+    }
+
+    setNextRoundBet(false)
+    nextRoundBetRef.current = false
+    setNextRoundBet2(false)
+    nextRoundBet2Ref.current = false
+
+    if (!userId) {
+      setBetHistory([])
+      setLiveBets([])
+      return
+    }
+
+    // Restore active bets for this session (supports up to 2 bets per round)
+    getActiveBets()
+      .then(bets => {
+        if (!Array.isArray(bets)) return
+        if (bets.length > 0 && phaseRef.current !== 'crashed') {
+          setBetPlaced(true)
+          betPlacedRef.current = true
+          currentBetIdRef.current = bets[0].id
+          pendingBetAmountRef.current = Number(bets[0].amount)
+        }
+        if (bets.length > 1 && phaseRef.current !== 'crashed') {
+          setBet2Placed(true)
+          bet2PlacedRef.current = true
+          currentBet2IdRef.current = bets[1].id
+          pendingBet2AmountRef.current = Number(bets[1].amount)
+        }
+      })
+      .catch(() => {})
+
+    // Load bet history and seed the all-users live feed with it
+    getMyBets(1, 30)
+      .then(result => {
+        const items = result.items.map(b => ({
+          id: b.id,
+          roundNumber: b.roundNumber != null ? Number(b.roundNumber) : null,
+          bet: Number(b.amount),
+          crashPoint: b.crashPoint != null ? Number(b.crashPoint) : null,
+          cashedOutAt: b.cashedOutAt != null ? Number(b.cashedOutAt) : null,
+          profit: Number(b.profit),
+          won: b.won,
+        }))
+        setBetHistory(items)
+        setLiveBets(items.map(b => ({
+          id: `seed-${b.id}`,
+          username: userRef.current?.username ?? '',
+          bet: b.bet,
+          cashedOutAt: b.cashedOutAt,
+          profit: b.profit,
+          won: b.won,
+        })))
+      })
+      .catch(() => {})
+  }, [userId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Reset bet state when demo mode is toggled
+  useEffect(() => {
+    setBetPlaced(false)
+    betPlacedRef.current = false
+    cashedOutRef.current = false
+    setCashedOut(false)
+    setCashedOutAt(null)
+    setLastWin(null)
+    currentBetIdRef.current = null
+    demoBet1AutoCashoutRef.current = null
+
+    setBet2Placed(false)
+    bet2PlacedRef.current = false
+    cashedOut2Ref.current = false
+    setCashedOut2(false)
+    setCashedOut2At(null)
+    setLastWin2(null)
+    currentBet2IdRef.current = null
+    demoBet2AutoCashoutRef.current = null
+
+    setError(null)
+    if (!demoMode) setBetHistory([])
+  }, [demoMode]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // SignalR connection. Re-created only when the logged-in user changes so that the
+  // JWT token used for the hub's [Authorize] methods (Cashout) is always fresh.
+  // Round state is synced via syncCurrentRound() on every successful connect / reconnect.
+  useEffect(() => {
+    const token = getToken()
+    console.log('[SignalR] creating connection, token present:', !!token, 'userId:', userId)
+
+    const connection = new signalR.HubConnectionBuilder()
+      .withUrl(`${BASE_URL}/hubs/game`, {
+        accessTokenFactory: () => getToken() || '',
+      })
+      .withAutomaticReconnect()
+      .configureLogging(signalR.LogLevel.Information)
+      .build()
+
+    connection.onclose(err => {
+      setConnected(false)
+      console.warn('[SignalR] connection closed', err ?? '')
+    })
+
+    connection.on('RoundWaiting', ({ startsInMs, roundNumber }) => {
+      currentRoundNumberRef.current = roundNumber ?? null
+      clearInterval(countdownIntervalRef.current)
+      phaseRef.current = 'waiting'
+      setPhase('waiting')
+      betPlacedRef.current = false
+      setBetPlaced(false)
+      cashedOutRef.current = false
+      setCashedOut(false)
+      setCashedOutAt(null)
+      setLastWin(null)
+      currentBetIdRef.current = null
+      demoBet1AutoCashoutRef.current = null
+      bet2PlacedRef.current = false
+      setBet2Placed(false)
+      cashedOut2Ref.current = false
+      setCashedOut2(false)
+      setCashedOut2At(null)
+      setLastWin2(null)
+      currentBet2IdRef.current = null
+      demoBet2AutoCashoutRef.current = null
+      setMultiplier(1.0)
+      setCrashPoint(null)
+      setError(null)
+
+      // Next-round queued bets (one-shot, fires if auto bet is not already handling it)
+      if (nextRoundBetRef.current && !autoBetRef.current) {
+        nextRoundBetRef.current = false
+        setNextRoundBet(false)
+        setTimeout(() => {
+          if (phaseRef.current !== 'waiting' || betPlacedRef.current) return
+          placeBetRef.current?.().catch(() => {})
+        }, 150)
+      }
+      if (nextRoundBet2Ref.current && !autoBet2Ref.current) {
+        nextRoundBet2Ref.current = false
+        setNextRoundBet2(false)
+        setTimeout(() => {
+          if (phaseRef.current !== 'waiting' || bet2PlacedRef.current) return
+          placeBet2Ref.current?.().catch(() => {})
+        }, 350)
+      }
+
+      // Auto bet 1: fire after state has fully reset
+      if (autoBetRef.current) {
+        const limit = autoBetLimitRef.current
+        const count = autoBetCountRef.current
+        if (limit > 0 && count >= limit) {
+          autoBetRef.current = false
+          setAutoBetState(false)
+        } else {
+          setTimeout(() => {
+            if (!autoBetRef.current || betPlacedRef.current || phaseRef.current !== 'waiting') return
+            placeBetRef.current?.().then(() => {
+              if (betPlacedRef.current) {
+                autoBetCountRef.current += 1
+                setAutoBetCount(c => c + 1)
+              }
+            }).catch(() => {})
+          }, 300)
+        }
+      }
+
+      // Auto bet 2: fire slightly after bet 1 to avoid race conditions
+      if (autoBet2Ref.current) {
+        const limit2 = autoBetLimit2Ref.current
+        const count2 = autoBetCount2Ref.current
+        if (limit2 > 0 && count2 >= limit2) {
+          autoBet2Ref.current = false
+          setAutoBet2State(false)
+        } else {
+          setTimeout(() => {
+            if (!autoBet2Ref.current || bet2PlacedRef.current || phaseRef.current !== 'waiting') return
+            placeBet2Ref.current?.().then(() => {
+              if (bet2PlacedRef.current) {
+                autoBetCount2Ref.current += 1
+                setAutoBetCount2(c => c + 1)
+              }
+            }).catch(() => {})
+          }, 500)
+        }
+      }
+
+      let secs = (startsInMs ?? 5000) / 1000
+      setCountdown(secs)
+      countdownIntervalRef.current = setInterval(() => {
+        secs -= 0.1
+        setCountdown(Math.max(0, parseFloat(secs.toFixed(1))))
+      }, 100)
+    })
+
+    connection.on('RoundStarted', () => {
+      clearInterval(countdownIntervalRef.current)
+      phaseRef.current = 'running'
+      setPhase('running')
+    })
+
+    connection.on('MultiplierTick', ({ multiplier: m }) => {
+      const mNum = Number(m)
+      multiplierRef.current = mNum
+      setMultiplier(mNum)
+
+      if (!demoModeRef.current) return
+
+      // Demo auto-cashout for bet 1
+      if (betPlacedRef.current && !cashedOutRef.current) {
+        const thresh = demoBet1AutoCashoutRef.current
+        if (thresh && mNum >= thresh) {
+          cashedOutRef.current = true
+          setCashedOut(true)
+          setCashedOutAt(mNum)
+          const win = parseFloat((pendingBetAmountRef.current * mNum).toFixed(2))
+          setLastWin(win)
+          updateDemoBalanceRef.current(prev => prev + win)
+          const autoCo1 = { id: currentBetIdRef.current, roundNumber: currentRoundNumberRef.current, bet: pendingBetAmountRef.current, crashPoint: null, cashedOutAt: mNum, profit: parseFloat((pendingBetAmountRef.current * (mNum - 1)).toFixed(2)), won: true }
+          setBetHistory(prev => [autoCo1, ...prev].slice(0, 50))
+          setLiveBets(prev => [{ id: autoCo1.id, username: 'Demo', bet: autoCo1.bet, cashedOutAt: mNum, profit: autoCo1.profit, won: true }, ...prev].slice(0, 100))
+        }
+      }
+
+      // Demo auto-cashout for bet 2
+      if (bet2PlacedRef.current && !cashedOut2Ref.current) {
+        const thresh2 = demoBet2AutoCashoutRef.current
+        if (thresh2 && mNum >= thresh2) {
+          cashedOut2Ref.current = true
+          setCashedOut2(true)
+          setCashedOut2At(mNum)
+          const win2 = parseFloat((pendingBet2AmountRef.current * mNum).toFixed(2))
+          setLastWin2(win2)
+          updateDemoBalanceRef.current(prev => prev + win2)
+          const autoCo2 = { id: currentBet2IdRef.current, roundNumber: currentRoundNumberRef.current, bet: pendingBet2AmountRef.current, crashPoint: null, cashedOutAt: mNum, profit: parseFloat((pendingBet2AmountRef.current * (mNum - 1)).toFixed(2)), won: true }
+          setBetHistory(prev => [autoCo2, ...prev].slice(0, 50))
+          setLiveBets(prev => [{ id: autoCo2.id, username: 'Demo', bet: autoCo2.bet, cashedOutAt: mNum, profit: autoCo2.profit, won: true }, ...prev].slice(0, 100))
+        }
+      }
+    })
+
+    connection.on('RoundCrashed', ({ crashPoint: cp, roundNumber: rn }) => {
+      phaseRef.current = 'crashed'
+      setPhase('crashed')
+      const cpNum = Number(cp)
+      const rnNum = rn != null ? Number(rn) : currentRoundNumberRef.current
+      setCrashPoint(cpNum)
+      setHistory(prev => [{ value: cpNum, id: Date.now() }, ...prev.slice(0, 39)])
+
+      setBetHistory(prev => {
+        let result = prev
+
+        // Handle bet 1 crash
+        if (betPlacedRef.current) {
+          if (!cashedOutRef.current) {
+            result = [
+              {
+                id: `lost-${Date.now()}`,
+                roundNumber: rnNum,
+                bet: pendingBetAmountRef.current,
+                crashPoint: cpNum,
+                cashedOutAt: null,
+                profit: -pendingBetAmountRef.current,
+                won: false,
+              },
+              ...result,
+            ]
+          } else {
+            result = result.map(entry =>
+              entry.id === currentBetIdRef.current ? { ...entry, crashPoint: cpNum } : entry
+            )
+          }
+        }
+
+        // Handle bet 2 crash
+        if (bet2PlacedRef.current) {
+          if (!cashedOut2Ref.current) {
+            result = [
+              {
+                id: `lost2-${Date.now()}`,
+                roundNumber: rnNum,
+                bet: pendingBet2AmountRef.current,
+                crashPoint: cpNum,
+                cashedOutAt: null,
+                profit: -pendingBet2AmountRef.current,
+                won: false,
+              },
+              ...result,
+            ]
+          } else {
+            result = result.map(entry =>
+              entry.id === currentBet2IdRef.current ? { ...entry, crashPoint: cpNum } : entry
+            )
+          }
+        }
+
+        return result.slice(0, 50)
+      })
+
+      // Push current user's lost bets into the all-users live feed
+      const liveUsername = userRef.current?.username || (demoModeRef.current ? 'Demo' : null)
+      if (liveUsername) {
+        setLiveBets(prev => {
+          let result = prev
+          if (betPlacedRef.current && !cashedOutRef.current) {
+            result = [{ id: `lost-live-${Date.now()}`, username: liveUsername, bet: pendingBetAmountRef.current, cashedOutAt: null, profit: -pendingBetAmountRef.current, won: false }, ...result]
+          }
+          if (bet2PlacedRef.current && !cashedOut2Ref.current) {
+            result = [{ id: `lost2-live-${Date.now()}`, username: liveUsername, bet: pendingBet2AmountRef.current, cashedOutAt: null, profit: -pendingBet2AmountRef.current, won: false }, ...result]
+          }
+          return result.slice(0, 100)
+        })
+      }
+    })
+
+    connection.on('PlayerCashedOut', ({ betId, username, amount, multiplier: cashMult, profit }) => {
+      const safeAmount = Number(amount) || 0
+      const safeProfit = Number(profit) || 0
+      const safeMult   = Number(cashMult) || 0
+      const winAmount  = safeAmount + safeProfit
+
+      setLiveBets(prev => {
+        if (prev.some(e => e.id === betId)) return prev
+        return [{ id: betId, username, bet: safeAmount, cashedOutAt: safeMult, profit: safeProfit, won: true }, ...prev].slice(0, 100)
+      })
+
+      if (userRef.current?.username !== username) return
+
+      if (betId === currentBetIdRef.current) {
+        cashedOutRef.current = true
+        setCashedOut(true)
+        setCashedOutAt(safeMult)
+        setLastWin(winAmount)
+        updateBalanceRef.current(prev => prev + winAmount)
+        setBetHistory(prev => [
+          {
+            id: betId,
+            roundNumber: currentRoundNumberRef.current,
+            bet: safeAmount,
+            crashPoint: null,
+            cashedOutAt: safeMult,
+            profit: safeProfit,
+            won: true,
+          },
+          ...prev,
+        ].slice(0, 50))
+      } else if (betId === currentBet2IdRef.current) {
+        cashedOut2Ref.current = true
+        setCashedOut2(true)
+        setCashedOut2At(safeMult)
+        setLastWin2(winAmount)
+        updateBalanceRef.current(prev => prev + winAmount)
+        setBetHistory(prev => [
+          {
+            id: betId,
+            roundNumber: currentRoundNumberRef.current,
+            bet: safeAmount,
+            crashPoint: null,
+            cashedOutAt: safeMult,
+            profit: safeProfit,
+            won: true,
+          },
+          ...prev,
+        ].slice(0, 50))
+      }
+    })
+
+    // Sync round state as soon as the connection is ready — covers both the initial
+    // page load and every login (when a new connection is created for the new user).
+    let stopped = false
+    connection.start()
+      .then(() => {
+        if (stopped) return
+        console.log('[SignalR] connected, userId:', userId)
+        setConnected(true)
+        syncCurrentRound()
+      })
+      .catch(err => {
+        if (stopped) return
+        console.error('[SignalR] connection failed:', err)
+        setConnected(false)
+        setError('Lost connection to game server. Please refresh the page.')
+      })
+
+    connection.onreconnected(() => {
+      setConnected(true)
+      syncCurrentRound()
+    })
+
+    return () => {
+      stopped = true
+      setConnected(false)
+      clearInterval(countdownIntervalRef.current)
+      connection.stop()
+    }
+  }, [userId, syncCurrentRound]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const placeBet = useCallback(async () => {
+    if (phaseRef.current !== 'waiting' || betPlacedRef.current) return
+    if (!userRef.current && !demoModeRef.current) { setError('Please log in to place a bet.'); return }
+    setError(null)
+
+    if (demoModeRef.current) {
+      currentBetIdRef.current = `demo1-${Date.now()}`
+      demoBet1AutoCashoutRef.current = autoCashoutEnabled && autoCashout ? parseFloat(autoCashout) : null
+      betPlacedRef.current = true
+      setBetPlaced(true)
+      pendingBetAmountRef.current = betAmount
+      updateDemoBalanceRef.current(prev => prev - betAmount)
+      return
+    }
+
+    try {
+      const autoCashoutVal =
+        autoCashoutEnabled && autoCashout ? parseFloat(autoCashout) : null
+      const result = await apiPlaceBet(betAmount, autoCashoutVal)
+      betPlacedRef.current = true
+      setBetPlaced(true)
+      currentBetIdRef.current = result.id
+      pendingBetAmountRef.current = betAmount
+      updateBalance(prev => prev - betAmount)
+    } catch (err) {
+      setError(err.message)
+    }
+  }, [betAmount, autoCashout, autoCashoutEnabled, updateBalance])
+  placeBetRef.current = placeBet
+
+  const placeBet2 = useCallback(async () => {
+    if (phaseRef.current !== 'waiting' || bet2PlacedRef.current) return
+    if (!userRef.current && !demoModeRef.current) { setError('Please log in to place a bet.'); return }
+    setError(null)
+
+    if (demoModeRef.current) {
+      currentBet2IdRef.current = `demo2-${Date.now()}`
+      demoBet2AutoCashoutRef.current = autoCashout2Enabled && autoCashout2 ? parseFloat(autoCashout2) : null
+      bet2PlacedRef.current = true
+      setBet2Placed(true)
+      pendingBet2AmountRef.current = bet2Amount
+      updateDemoBalanceRef.current(prev => prev - bet2Amount)
+      return
+    }
+
+    try {
+      const autoCashoutVal =
+        autoCashout2Enabled && autoCashout2 ? parseFloat(autoCashout2) : null
+      const result = await apiPlaceBet(bet2Amount, autoCashoutVal)
+      bet2PlacedRef.current = true
+      setBet2Placed(true)
+      currentBet2IdRef.current = result.id
+      pendingBet2AmountRef.current = bet2Amount
+      updateBalance(prev => prev - bet2Amount)
+    } catch (err) {
+      setError(err.message)
+    }
+  }, [bet2Amount, autoCashout2, autoCashout2Enabled, updateBalance])
+  placeBet2Ref.current = placeBet2
+
+  const cancelBet = useCallback(() => {
+    // Backend has no cancel-bet endpoint
+  }, [])
+
+  const cancelBet2 = useCallback(() => {
+    // Backend has no cancel-bet endpoint
+  }, [])
+
+  const cashOut = useCallback(async () => {
+    if (phaseRef.current !== 'running' || cashedOutRef.current || !betPlacedRef.current) return
+    setError(null)
+
+    if (demoModeRef.current) {
+      const mNum = multiplierRef.current
+      cashedOutRef.current = true
+      setCashedOut(true)
+      setCashedOutAt(mNum)
+      const win = parseFloat((pendingBetAmountRef.current * mNum).toFixed(2))
+      setLastWin(win)
+      updateDemoBalanceRef.current(prev => prev + win)
+      const demoEntry = {
+        id: currentBetIdRef.current,
+        roundNumber: currentRoundNumberRef.current,
+        bet: pendingBetAmountRef.current,
+        crashPoint: null,
+        cashedOutAt: mNum,
+        profit: parseFloat((pendingBetAmountRef.current * (mNum - 1)).toFixed(2)),
+        won: true,
+      }
+      setBetHistory(prev => [demoEntry, ...prev].slice(0, 50))
+      setLiveBets(prev => [{ id: demoEntry.id, username: 'Demo', bet: demoEntry.bet, cashedOutAt: mNum, profit: demoEntry.profit, won: true }, ...prev].slice(0, 100))
+      return
+    }
+
+    if (!currentBetIdRef.current) return
+
+    try {
+      const result = await apiCashout(currentBetIdRef.current)
+      cashedOutRef.current = true
+      setCashedOut(true)
+      const cashMult = Number(result.cashedOutAt)
+      setCashedOutAt(cashMult)
+      const winAmount = Number(result.amount) + Number(result.profit)
+      setLastWin(winAmount)
+      updateBalance(prev => prev + winAmount)
+
+      const entry = {
+        id: result.id,
+        roundNumber: result.roundNumber != null ? Number(result.roundNumber) : null,
+        bet: Number(result.amount),
+        crashPoint: null,
+        cashedOutAt: cashMult,
+        profit: Number(result.profit),
+        won: true,
+      }
+      setBetHistory(prev => [entry, ...prev].slice(0, 50))
+      setLiveBets(prev => {
+        if (prev.some(e => e.id === entry.id)) return prev
+        return [{ id: entry.id, username: userRef.current?.username ?? '', bet: entry.bet, cashedOutAt: cashMult, profit: entry.profit, won: true }, ...prev].slice(0, 100)
+      })
+    } catch (err) {
+      setError(err.message)
+    }
+  }, [updateBalance])
+
+  const cashOut2 = useCallback(async () => {
+    if (phaseRef.current !== 'running' || cashedOut2Ref.current || !bet2PlacedRef.current) return
+    setError(null)
+
+    if (demoModeRef.current) {
+      const mNum = multiplierRef.current
+      cashedOut2Ref.current = true
+      setCashedOut2(true)
+      setCashedOut2At(mNum)
+      const win = parseFloat((pendingBet2AmountRef.current * mNum).toFixed(2))
+      setLastWin2(win)
+      updateDemoBalanceRef.current(prev => prev + win)
+      const demoEntry2 = {
+        id: currentBet2IdRef.current,
+        roundNumber: currentRoundNumberRef.current,
+        bet: pendingBet2AmountRef.current,
+        crashPoint: null,
+        cashedOutAt: mNum,
+        profit: parseFloat((pendingBet2AmountRef.current * (mNum - 1)).toFixed(2)),
+        won: true,
+      }
+      setBetHistory(prev => [demoEntry2, ...prev].slice(0, 50))
+      setLiveBets(prev => [{ id: demoEntry2.id, username: 'Demo', bet: demoEntry2.bet, cashedOutAt: mNum, profit: demoEntry2.profit, won: true }, ...prev].slice(0, 100))
+      return
+    }
+
+    if (!currentBet2IdRef.current) return
+
+    try {
+      const result = await apiCashout(currentBet2IdRef.current)
+      cashedOut2Ref.current = true
+      setCashedOut2(true)
+      const cashMult = Number(result.cashedOutAt)
+      setCashedOut2At(cashMult)
+      const winAmount = Number(result.amount) + Number(result.profit)
+      setLastWin2(winAmount)
+      updateBalance(prev => prev + winAmount)
+
+      const entry2 = {
+        id: result.id,
+        roundNumber: result.roundNumber != null ? Number(result.roundNumber) : null,
+        bet: Number(result.amount),
+        crashPoint: null,
+        cashedOutAt: cashMult,
+        profit: Number(result.profit),
+        won: true,
+      }
+      setBetHistory(prev => [entry2, ...prev].slice(0, 50))
+      setLiveBets(prev => {
+        if (prev.some(e => e.id === entry2.id)) return prev
+        return [{ id: entry2.id, username: userRef.current?.username ?? '', bet: entry2.bet, cashedOutAt: cashMult, profit: entry2.profit, won: true }, ...prev].slice(0, 100)
+      })
+    } catch (err) {
+      setError(err.message)
+    }
+  }, [updateBalance])
+
+  return {
+    phase,
+    multiplier,
+    crashPoint,
+    countdown,
+    balance: demoMode ? demoBalance : (user ? Number(user.balance) : 0),
+
+    // Bet 1
+    betAmount,
+    setBetAmount,
+    autoCashout,
+    setAutoCashout,
+    autoCashoutEnabled,
+    setAutoCashoutEnabled,
+    autoBet,
+    setAutoBet: (v) => { setAutoBetState(v); autoBetRef.current = v },
+    autoBetCount,
+    autoBetLimit,
+    setAutoBetLimit: (v) => { setAutoBetLimitState(v); autoBetLimitRef.current = v },
+    resetAutoBetCount: () => { setAutoBetCount(0); autoBetCountRef.current = 0 },
+    betPlaced,
+    cashedOut,
+    cashedOutAt,
+    lastWin,
+    placeBet,
+    cancelBet,
+    cashOut,
+
+    // Bet 2
+    bet2Amount,
+    setBet2Amount,
+    autoCashout2,
+    setAutoCashout2,
+    autoCashout2Enabled,
+    setAutoCashout2Enabled,
+    autoBet2,
+    setAutoBet2: (v) => { setAutoBet2State(v); autoBet2Ref.current = v },
+    autoBetCount2,
+    autoBetLimit2,
+    setAutoBetLimit2: (v) => { setAutoBetLimit2State(v); autoBetLimit2Ref.current = v },
+    resetAutoBetCount2: () => { setAutoBetCount2(0); autoBetCount2Ref.current = 0 },
+    bet2Placed,
+    cashedOut2,
+    cashedOut2At,
+    lastWin2,
+    placeBet2,
+    cancelBet2,
+    cashOut2,
+
+    history,
+    betHistory,
+    liveBets,
+    nextRoundBet,
+    setNextRoundBet: (v) => { setNextRoundBet(v); nextRoundBetRef.current = v },
+    nextRoundBet2,
+    setNextRoundBet2: (v) => { setNextRoundBet2(v); nextRoundBet2Ref.current = v },
+    error,
+    connected,
+    isAuthenticated: !!user,
+  }
+}

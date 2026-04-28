@@ -1,0 +1,14 @@
+using Spear.API.Models.DTOs.Bet;
+using Spear.API.Models.DTOs.Wallet;
+
+namespace Spear.API.Services;
+
+public interface IBetService
+{
+    Task<BetResultDto> PlaceBetAsync(Guid userId, PlaceBetRequest request);
+    Task<BetResultDto> CashoutAsync(Guid userId, Guid betId);
+    Task<PagedResult<BetResultDto>> GetUserBetsAsync(Guid userId, int page, int pageSize);
+    Task<ActiveBetDto?> GetActiveBetAsync(Guid userId);
+    Task<List<BetResultDto>> GetRoundBetsAsync(Guid roundId);
+    Task SettleRoundBetsAsync(Guid roundId, decimal crashPoint);
+}

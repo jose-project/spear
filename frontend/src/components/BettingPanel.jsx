@@ -1,0 +1,271 @@
+import { useState } from 'react'
+import styles from './BettingPanel.module.css'
+
+function BetSlot({
+  label,
+  phase,
+  balance,
+  multiplier,
+  betAmount, setBetAmount,
+  autoCashout, setAutoCashout,
+  autoCashoutEnabled, setAutoCashoutEnabled,
+  autoBet, setAutoBet, autoBetCount, autoBetLimit, setAutoBetLimit, resetAutoBetCount,
+  betPlaced, cashedOut, cashedOutAt, lastWin,
+  placeBet, cancelBet, cashOut,
+  nextRoundBet, setNextRoundBet,
+}) {
+  const canBet       = phase === 'waiting' && !betPlaced
+  const canCancel    = phase === 'waiting' && betPlaced
+  const canCashOut   = phase === 'running' && betPlaced && !cashedOut
+  const running      = phase === 'running'
+
+  function handleBetInput(e) {
+    const val = parseFloat(e.target.value)
+    if (!isNaN(val) && val >= 0) setBetAmount(val)
+  }
+
+  function adjustBet(type) {
+    if (betPlaced) return
+    if (type === 'half')   setBetAmount(prev => Math.max(1, parseFloat((prev / 2).toFixed(2))))
+    if (type === 'double') setBetAmount(prev => Math.min(balance, parseFloat((prev * 2).toFixed(2))))
+    if (type === 'max')    setBetAmount(Math.max(1, parseFloat(balance.toFixed(2))))
+  }
+
+  function stepBet(delta) {
+    setBetAmount(prev => Math.max(1, parseFloat((prev + delta).toFixed(2))))
+  }
+
+  const [autoBetOpen, setAutoBetOpen] = useState(false)
+
+  function handleAutoBetToggle(enabled) {
+    setAutoBetOpen(enabled)
+    if (!enabled && autoBet) setAutoBet(false)
+  }
+
+  return (
+    <div className={styles.slot}>
+      <div className={styles.slotTitle}>{label}</div>
+      {(!nextRoundBet ? (
+          <button className={`${styles.betBtn} ${styles.nextRoundBtn}`} onClick={() => setNextRoundBet(true)}>
+            Bet(Next Round)
+          </button>
+        ) : (
+          <div className={styles.nextRoundQueued}>
+            <div className={styles.nextRoundQueuedLeft}>
+              <span className={styles.nextRoundDot} />
+              <span>Queued for next round</span>
+            </div>
+            <button className={styles.nextRoundCancel} onClick={() => setNextRoundBet(false)}>Cancel</button>
+          </div>
+        ))}
+      {/* Bet Amount */}
+      <div className={styles.section}>
+        <label className={styles.label}>Bet Amount</label>
+        <div className={styles.inputRow}>
+          <button className={styles.stepBtn} onClick={() => stepBet(-1)}>−</button>
+          <div className={styles.inputWrap}>
+            <input
+              type="number"
+              className={styles.input}
+              value={betAmount}
+              onChange={handleBetInput}
+              min={1}
+              max={balance}
+              step={1}
+            />
+          </div>
+          <button className={styles.stepBtn} onClick={() => stepBet(1)}>+</button>
+        </div>
+        <div className={styles.adjRow}>
+          <button className={styles.adjBtn} onClick={() => adjustBet('half')}  >½</button>
+          <button className={styles.adjBtn} onClick={() => adjustBet('double')} >2×</button>
+          <button className={styles.adjBtn} onClick={() => adjustBet('max')}   >Max</button>
+        </div>
+      </div>
+
+      {/* Auto Cash Out */}
+      <div className={styles.section}>
+        <div className={styles.autoCashoutHeader}>
+          <label className={styles.label}>Auto Cash Out</label>
+          <label className={styles.toggle}>
+            <input
+              type="checkbox"
+              checked={autoCashoutEnabled}
+              onChange={e => setAutoCashoutEnabled(e.target.checked)}
+              disabled={running && betPlaced}
+            />
+            <span className={styles.toggleSlider}></span>
+          </label>
+        </div>
+        {autoCashoutEnabled && (
+          <div className={styles.inputRow}>
+            <div className={styles.inputWrap}>
+              <input
+                type="number"
+                className={styles.input}
+                placeholder="1.50"
+                value={autoCashout}
+                onChange={e => setAutoCashout(e.target.value)}
+                min={1.01}
+                step={0.01}
+                disabled={running && betPlaced}
+              />
+              <span className={styles.inputSuffix}>×</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Auto Bet */}
+      <div className={styles.section}>
+        <div className={styles.autoCashoutHeader}>
+          <label className={styles.label}>Auto Bet</label>
+          <label className={styles.toggle}>
+            <input
+              type="checkbox"
+              checked={autoBetOpen}
+              onChange={e => handleAutoBetToggle(e.target.checked)}
+            />
+            <span className={styles.toggleSlider}></span>
+          </label>
+        </div>
+        {autoBetOpen && (
+          !autoBet ? (
+            <>
+              <div className={styles.autoBetLimitRow}>
+                <label className={styles.label}>Rounds</label>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  className={styles.autoBetLimitInput}
+                  value={autoBetLimit === 0 ? '' : autoBetLimit}
+                  onChange={e => {
+                    const v = parseInt(e.target.value, 10)
+                    const newLimit = isNaN(v) || v < 1 ? 0 : v
+                    setAutoBetLimit(newLimit)
+                    if (newLimit > 0) resetAutoBetCount()
+                  }}
+                  placeholder="∞"
+                  step={1}
+                />
+              </div>
+              <button
+                className={`${styles.betBtn} ${styles.autoBetStartBtn}`}
+                onClick={() => {
+                  resetAutoBetCount()
+                  setAutoBet(true)
+                  if (phase === 'waiting' && !betPlaced) placeBet()
+                }}
+              >
+                Start Auto Bet
+              </button>
+            </>
+          ) : (
+            <>
+              <div className={styles.autoBetStatus}>
+                <span className={styles.autoBetDot} />
+                <span>Running</span>
+                {autoBetLimit > 0
+                  ? <span className={styles.autoBetCount}>{autoBetCount} / {autoBetLimit}</span>
+                  : autoBetCount > 0 && <span className={styles.autoBetCount}>{autoBetCount}</span>
+                }
+              </div>
+              <button
+                className={`${styles.betBtn} ${styles.autoBetStopBtn}`}
+                onClick={() => setAutoBet(false)}
+              >
+                Stop Auto Bet
+              </button>
+            </>
+          )
+        )}
+      </div>
+
+      {/* Action button */}
+      <div className={styles.actionArea}>
+        {canBet && (
+          <button className={styles.betBtn} onClick={placeBet}>Place Bet</button>
+        )}
+        {canCancel && (
+          <div className={styles.betPlacedBadge}>
+            <span className={styles.betPlacedDot} />
+            Bet placed — waiting for round
+          </div>
+        )}
+        {canCashOut && (
+          <button className={`${styles.betBtn} ${styles.cashoutBtn}`} onClick={cashOut}>
+            <span className={styles.cashoutLabel}>Cash Out</span>
+            <span className={styles.cashoutAmount}>C {(betAmount * (multiplier || 1)).toFixed(2)}</span>
+          </button>
+        )}
+        {running && betPlaced && cashedOut && (
+          <div className={styles.cashedOutInfo}>
+            <span className={styles.cashedOutLabel}>Cashed Out</span>
+            <span className={styles.cashedOutMult}>{cashedOutAt?.toFixed(2)}×</span>
+            <span className={styles.cashedOutWin}>+C {lastWin?.toFixed(2)}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export default function BettingPanel({
+  phase, balance, multiplier,
+  betAmount, setBetAmount,
+  autoCashout, setAutoCashout,
+  autoCashoutEnabled, setAutoCashoutEnabled,
+  autoBet, setAutoBet, autoBetCount, autoBetLimit, setAutoBetLimit, resetAutoBetCount,
+  betPlaced, cashedOut, cashedOutAt, lastWin,
+  placeBet, cancelBet, cashOut,
+  nextRoundBet, setNextRoundBet,
+  bet2Amount, setBet2Amount,
+  autoCashout2, setAutoCashout2,
+  autoCashout2Enabled, setAutoCashout2Enabled,
+  autoBet2, setAutoBet2, autoBetCount2, autoBetLimit2, setAutoBetLimit2, resetAutoBetCount2,
+  bet2Placed, cashedOut2, cashedOut2At, lastWin2,
+  placeBet2, cancelBet2, cashOut2,
+  nextRoundBet2, setNextRoundBet2,
+  hideBet2 = false,
+}) {
+  return (
+    <div className={styles.panel}>
+
+      {/* Header */}
+      <div className={styles.panelHeader}>
+        <span className={styles.panelTitle}>Place Bet</span>
+      </div>
+
+      {/* Bet slots */}
+      <div className={styles.slotsRow}>
+        <BetSlot
+          label="Bet 1"
+          phase={phase} balance={balance} multiplier={multiplier}
+          betAmount={betAmount} setBetAmount={setBetAmount}
+          autoCashout={autoCashout} setAutoCashout={setAutoCashout}
+          autoCashoutEnabled={autoCashoutEnabled} setAutoCashoutEnabled={setAutoCashoutEnabled}
+          autoBet={autoBet} setAutoBet={setAutoBet} autoBetCount={autoBetCount}
+          autoBetLimit={autoBetLimit} setAutoBetLimit={setAutoBetLimit} resetAutoBetCount={resetAutoBetCount}
+          betPlaced={betPlaced} cashedOut={cashedOut} cashedOutAt={cashedOutAt} lastWin={lastWin}
+          placeBet={placeBet} cancelBet={cancelBet} cashOut={cashOut}
+          nextRoundBet={nextRoundBet} setNextRoundBet={setNextRoundBet}
+        />
+        {!hideBet2 && (
+          <BetSlot
+            label="Bet 2"
+            phase={phase} balance={balance} multiplier={multiplier}
+            betAmount={bet2Amount} setBetAmount={setBet2Amount}
+            autoCashout={autoCashout2} setAutoCashout={setAutoCashout2}
+            autoCashoutEnabled={autoCashout2Enabled} setAutoCashoutEnabled={setAutoCashout2Enabled}
+            autoBet={autoBet2} setAutoBet={setAutoBet2} autoBetCount={autoBetCount2}
+            autoBetLimit={autoBetLimit2} setAutoBetLimit={setAutoBetLimit2} resetAutoBetCount={resetAutoBetCount2}
+            betPlaced={bet2Placed} cashedOut={cashedOut2} cashedOutAt={cashedOut2At} lastWin={lastWin2}
+            placeBet={placeBet2} cancelBet={cancelBet2} cashOut={cashOut2}
+            nextRoundBet={nextRoundBet2} setNextRoundBet={setNextRoundBet2}
+          />
+        )}
+      </div>
+
+    </div>
+  )
+}

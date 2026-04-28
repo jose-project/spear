@@ -1,0 +1,202 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(8px);
+}
+
+.modal {
+  background: rgba(10, 14, 23, 0.96);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 2px solid #00cfb4;
+  border-radius: 10px;
+  padding: 36px 32px 32px;
+  width: 420px;
+  max-width: 95vw;
+  position: relative;
+  box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.04);
+}
+
+/* Close button */
+.closeBtn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #6b7280;
+  font-size: 14px;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: color 0.15s, background 0.15s;
+  line-height: 1;
+}
+.closeBtn:hover { color: #e2e8f0; background: rgba(255, 255, 255, 0.1); }
+
+/* Header */
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.modalLogo {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.modalTitle {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.4px;
+}
+
+.modalTagline {
+  text-align: center;
+  font-size: 11px;
+  color: #4b5563;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 28px;
+}
+
+/* Divider */
+.divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  margin: 0 -32px 24px;
+}
+
+/* Tabs — underline style matching historyTab in CrashGame */
+.tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.tab {
+  padding: 9px 0;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #4b5563;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  margin-bottom: -1px;
+}
+.tab:hover { color: #9ca3af; }
+
+.activeTab {
+  border-bottom-color: #00cfb4;
+  color: #cbd5e6;
+}
+
+/* Form */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 8px;
+}
+
+.input {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 5px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 11px 14px;
+  outline: none;
+  transition: border-color 0.15s;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+.input:focus { border-color: rgba(0, 207, 180, 0.55); }
+.input::placeholder { color: #374151; }
+
+/* Error */
+.error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 5px;
+  padding: 9px 12px;
+  font-size: 13px;
+  color: #f87171;
+  margin-top: 8px;
+}
+
+/* Submit — ghost/outline style matching betBtn / loginBtn in the main screen */
+.submitBtn {
+  margin-top: 18px;
+  padding: 13px;
+  background: rgba(0, 207, 180, 0.08);
+  border: 1px solid rgba(0, 207, 180, 0.35);
+  border-radius: 5px;
+  color: #00cfb4;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.3px;
+  width: 100%;
+  font-family: inherit;
+}
+.submitBtn:hover:not(:disabled) {
+  background: rgba(0, 207, 180, 0.15);
+  border-color: rgba(0, 207, 180, 0.6);
+  box-shadow: 0 0 14px rgba(0, 207, 180, 0.2);
+  transform: translateY(-1px);
+}
+.submitBtn:active:not(:disabled) { transform: translateY(0); box-shadow: none; }
+.submitBtn:disabled { opacity: 0.38; cursor: not-allowed; }
+
+/* Switch mode link */
+.switchMode {
+  text-align: center;
+  margin-top: 18px;
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.switchLink {
+  background: none;
+  border: none;
+  color: #00cfb4;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 4px;
+  font-family: inherit;
+}
+.switchLink:hover { color: #00dfc2; }
