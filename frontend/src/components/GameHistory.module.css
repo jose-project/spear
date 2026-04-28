@@ -35,3 +35,27 @@
 .purple { background: rgba(168,85,247,0.15); color: #c084fc; border: 1px solid rgba(168,85,247,0.3); }
 
 .empty { color: var(--text-muted); font-size: 14px; font-style: italic; }
+
+@media (max-width: 700px) {
+  .container {
+    overflow: hidden;
+    flex-wrap: nowrap;
+  }
+
+  .list {
+    display: grid;
+    grid-template-rows: repeat(2, auto);
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    flex-wrap: unset;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+  }
+
+  .list::-webkit-scrollbar       { height: 3px; }
+  .list::-webkit-scrollbar-track { background: transparent; }
+  .list::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 3px; }
+}

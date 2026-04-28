@@ -3,7 +3,7 @@
 <Project>
   <PropertyGroup>
     <_PublishTargetUrl>C:\github\spear\backend\Spear.API\bin\Release\net10.0\publish\</_PublishTargetUrl>
-    <History>True|2026-04-28T09:30:20.2008813Z||;True|2026-04-28T01:54:58.3020919-07:00||;True|2026-04-28T01:42:54.0141382-07:00||;True|2026-04-28T01:07:10.5593514-07:00||;True|2026-04-28T01:02:44.8392722-07:00||;</History>
+    <History>True|2026-04-28T22:00:04.9168966Z||;True|2026-04-28T02:30:20.2008813-07:00||;True|2026-04-28T01:54:58.3020919-07:00||;True|2026-04-28T01:42:54.0141382-07:00||;True|2026-04-28T01:07:10.5593514-07:00||;True|2026-04-28T01:02:44.8392722-07:00||;</History>
     <LastFailureDetails />
   </PropertyGroup>
 </Project>

@@ -8,7 +8,7 @@ const SLOTS = [
 ]
 
 function BetSlot({
-  color, rgb,
+  label, color, rgb,
   phase, balance, multiplier,
   betAmount, setBetAmount,
   autoCashout, setAutoCashout,
@@ -53,12 +53,11 @@ function BetSlot({
   return (
     <div className={styles.slot} style={{ '--accent': color, '--accent-rgb': rgb }}>
 
+      {/* Slot title */}
+      <div className={styles.slotTitle}>{label}</div>
+
       {/* Bet Amount */}
       <div className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <span className={styles.label}>Bet Amount</span>
-          <span className={styles.balanceHint}>Bal: {balance?.toFixed(2)}</span>
-        </div>
         <div className={styles.amountRow}>
           <button className={styles.stepBtn} onClick={() => stepBet(-1)} disabled={betPlaced}>−</button>
           <input
@@ -152,23 +151,23 @@ function BetSlot({
                   if (phase === 'waiting' && !betPlaced) placeBet()
                 }}
               >
-                Start Auto Bet
+                Start
               </button>
             </>
           ) : (
             <>
               <div className={styles.autoBetStatus}>
                 <span className={styles.autoBetDot} />
-                <span>Auto betting</span>
+                <span>Auto</span>
                 {autoBetLimit > 0
-                  ? <span className={styles.autoBetCount}>{autoBetCount} / {autoBetLimit}</span>
+                  ? <span className={styles.autoBetCount}>{autoBetCount}/{autoBetLimit}</span>
                   : autoBetCount > 0 && <span className={styles.autoBetCount}>{autoBetCount}</span>}
               </div>
               <button
                 className={`${styles.actionBtn} ${styles.autoBetStopBtn}`}
                 onClick={() => setAutoBet(false)}
               >
-                Stop Auto Bet
+                Stop
               </button>
             </>
           )
@@ -186,7 +185,7 @@ function BetSlot({
         {phase === 'waiting' && betPlaced && (
           <div className={styles.betPlacedBadge}>
             <span className={styles.betPlacedDot} />
-            <span>Bet placed — waiting for round</span>
+            <span>Queued</span>
           </div>
         )}
 
@@ -199,9 +198,8 @@ function BetSlot({
 
         {running && betPlaced && cashedOut && (
           <div className={styles.cashedOutInfo}>
-            <span className={styles.cashedOutLabel}>Cashed Out</span>
             <span className={styles.cashedOutMult}>{cashedOutAt?.toFixed(2)}×</span>
-            <span className={styles.cashedOutWin}>+C {lastWin?.toFixed(2)}</span>
+            <span className={styles.cashedOutWin}>+{lastWin?.toFixed(2)}</span>
           </div>
         )}
 
@@ -211,15 +209,13 @@ function BetSlot({
               className={`${styles.actionBtn} ${styles.nextRoundBtn}`}
               onClick={() => setNextRoundBet(true)}
             >
-              Bet Next Round
+              Next Round
             </button>
           ) : (
             <div className={styles.nextRoundQueued}>
-              <div className={styles.nextRoundQueuedLeft}>
-                <span className={styles.nextRoundDot} />
-                <span>Queued for next round</span>
-              </div>
-              <button className={styles.nextRoundCancel} onClick={() => setNextRoundBet(false)}>Cancel</button>
+              <span className={styles.nextRoundDot} />
+              <span>Queued</span>
+              <button className={styles.nextRoundCancel} onClick={() => setNextRoundBet(false)}>✕</button>
             </div>
           )
         )}
@@ -253,10 +249,6 @@ export default function BettingPanel({
   placeBet3, cancelBet3, cashOut3,
   nextRoundBet3, setNextRoundBet3,
 }) {
-  const [activeSlot, setActiveSlot] = useState(0)
-
-  const activePlaced = [betPlaced, bet2Placed, bet3Placed]
-
   const slotProps = [
     {
       phase, balance, multiplier,
@@ -291,30 +283,26 @@ export default function BettingPanel({
   return (
     <div className={styles.panel}>
 
-      {/* Tab bar */}
-      <div className={styles.tabBar}>
-        {SLOTS.map((s, i) => (
-          <button
-            key={i}
-            className={`${styles.tab} ${activeSlot === i ? styles.tabActive : ''}`}
-            style={activeSlot === i ? { '--tab-color': s.color, '--tab-rgb': s.rgb } : {}}
-            onClick={() => setActiveSlot(i)}
-          >
-            {activePlaced[i] && (
-              <span className={styles.tabDot} style={{ background: s.color }} />
-            )}
-            {s.label}
-          </button>
-        ))}
+      {/* Shared balance header */}
+      <div className={styles.panelHeader}>
+        <span className={styles.panelHeaderLabel}>Balance</span>
+        <span className={styles.panelBalance}>
+          {Number(balance ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </span>
       </div>
 
-      {/* Active bet slot */}
-      <BetSlot
-        key={activeSlot}
-        color={SLOTS[activeSlot].color}
-        rgb={SLOTS[activeSlot].rgb}
-        {...slotProps[activeSlot]}
-      />
+      {/* All three slots side by side */}
+      <div className={styles.slotsRow}>
+        {SLOTS.map((s, i) => (
+          <BetSlot
+            key={i}
+            label={s.label}
+            color={s.color}
+            rgb={s.rgb}
+            {...slotProps[i]}
+          />
+        ))}
+      </div>
 
     </div>
   )

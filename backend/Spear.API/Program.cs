@@ -100,21 +100,29 @@ var app = builder.Build();
 
 app.UseMiddleware<ErrorHandlingMiddleware>();
 
-if (app.Environment.IsDevelopment())
-{
+//if (app.Environment.IsDevelopment())
+//{
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Spear API v1");
         c.RoutePrefix = "swagger";
     });
-}
-//// Serve static files from wwwroot
-//app.UseDefaultFiles();
-//app.UseStaticFiles();
+//}
 
-//app.UseCors("AllowReactApp"); // ← This line must be here
-app.UseCors();
+if (app.Environment.IsDevelopment())
+{
+    app.UseCors();
+}
+else
+{
+    // Serve static files from wwwroot
+    app.UseDefaultFiles();
+    app.UseStaticFiles();
+
+    app.UseCors("AllowReactApp"); // ← This line must be here
+}
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

@@ -12,102 +12,92 @@
   overflow: hidden;
 }
 
-/* ── Tab bar ── */
-.tabBar {
-  display: flex;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(0, 0, 0, 0.18);
-}
-
-.tab {
-  flex: 1;
+/* ── Shared balance header ── */
+.panelHeader {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 12px 6px 13px;
-  border: none;
-  border-right: 1px solid rgba(255, 255, 255, 0.04);
-  border-bottom: 2px solid transparent;
-  background: transparent;
-  color: #4b5563;
-  font-size: 10px;
-  font-weight: 800;
+  justify-content: space-between;
+  padding: 10px 14px 9px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.panelHeaderLabel {
+  font-size: 9px;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1.5px;
-  cursor: pointer;
-  transition: color 0.15s, border-bottom-color 0.15s, background 0.15s;
-  margin-bottom: -1px;
+  color: #4b5563;
 }
 
-.tab:last-child { border-right: none; }
-.tab:hover { color: #9ca3af; }
-
-.tabActive {
-  color: var(--tab-color);
-  border-bottom-color: var(--tab-color);
-  background: rgba(var(--tab-rgb), 0.04);
+.panelBalance {
+  font-size: 13px;
+  font-weight: 800;
+  color: #e5e7eb;
+  letter-spacing: 0.3px;
 }
 
-.tabDot {
-  width: 5px;
-  height: 5px;
-  border-radius: 5px;
-  flex-shrink: 0;
-  animation: dotPulse 1.3s ease-in-out infinite;
+/* ── Three-column row ── */
+.slotsRow {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
 }
 
-/* ── Slot content ── */
+/* ── Slot column ── */
 .slot {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 16px 14px 14px;
+  padding: 10px 10px 11px;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  min-width: 0;
+}
+
+.slot:last-child { border-right: none; }
+
+/* ── Slot title ── */
+.slotTitle {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.8px;
+  color: var(--accent);
+  padding-bottom: 9px;
+  border-bottom: 1px solid rgba(var(--accent-rgb), 0.2);
+  margin-bottom: 2px;
 }
 
 /* ── Section ── */
 .section {
   display: flex;
   flex-direction: column;
-  gap: 9px;
-  padding: 13px 0;
+  gap: 7px;
+  padding: 10px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.section:first-child { padding-top: 0; }
 .section:last-child { border-bottom: none; padding-bottom: 0; }
-
-.sectionHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
 
 .label {
   color: #4b5563;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
-}
-
-.balanceHint {
-  color: var(--text-muted);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
+  letter-spacing: 1.3px;
 }
 
 /* ── Bet amount row ── */
 .amountRow {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 5px;
 }
 
 .stepBtn {
   flex-shrink: 0;
-  width: 30px;
-  height: 30px;
+  width: 24px;
+  height: 24px;
   border-radius: 5px;
   display: flex;
   align-items: center;
@@ -115,7 +105,7 @@
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border);
   color: #4b5563;
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 300;
   line-height: 1;
   cursor: pointer;
@@ -137,7 +127,7 @@
   background: transparent;
   border: none;
   color: var(--text-primary);
-  font-size: 28px;
+  font-size: 20px;
   font-weight: 800;
   text-align: center;
   outline: none;
@@ -151,21 +141,21 @@
 /* ── Adj buttons ── */
 .adjRow {
   display: flex;
-  gap: 4px;
+  gap: 3px;
 }
 
 .adjBtn {
   flex: 1;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--border);
-  border-radius: 5px;
+  border-radius: 4px;
   color: #6b7280;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  padding: 6px 4px;
+  padding: 5px 2px;
   cursor: pointer;
   transition: all 0.14s;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
 }
 
 .adjBtn:hover:not(:disabled) {
@@ -195,10 +185,10 @@
   width: 100%;
   background: var(--bg-input);
   border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 9px 34px 9px 12px;
+  border-radius: 5px;
+  padding: 7px 28px 7px 9px;
   color: var(--text-primary);
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
@@ -213,9 +203,9 @@
 
 .inputSuffix {
   position: absolute;
-  right: 12px;
+  right: 9px;
   color: #4b5563;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   pointer-events: none;
 }
@@ -224,8 +214,8 @@
 .toggle {
   position: relative;
   display: inline-block;
-  width: 38px;
-  height: 20px;
+  width: 34px;
+  height: 18px;
   flex-shrink: 0;
 }
 
@@ -237,19 +227,19 @@
   inset: 0;
   background: var(--bg-input);
   border: 1px solid var(--border);
-  border-radius: 5px;
+  border-radius: 4px;
   transition: 0.2s;
 }
 
 .toggleSlider::before {
   content: '';
   position: absolute;
-  height: 14px;
-  width: 14px;
+  height: 12px;
+  width: 12px;
   left: 2px;
   bottom: 2px;
   background: #374151;
-  border-radius: 5px;
+  border-radius: 4px;
   transition: 0.2s;
 }
 
@@ -259,7 +249,7 @@
 }
 
 .toggle input:checked + .toggleSlider::before {
-  transform: translateX(18px);
+  transform: translateX(16px);
   background: var(--accent);
   box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.6);
 }
@@ -271,18 +261,18 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
 }
 
 .autoBetLimitInput {
-  width: 64px;
+  width: 52px;
   flex-shrink: 0;
   background: var(--bg-input);
   border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 7px 10px;
+  border-radius: 5px;
+  padding: 6px 8px;
   color: var(--text-primary);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   text-align: center;
   outline: none;
@@ -294,20 +284,20 @@
 .autoBetStatus {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 11px;
+  gap: 6px;
+  font-size: 10px;
   color: var(--accent);
   font-weight: 600;
-  padding: 9px 12px;
+  padding: 7px 9px;
   background: rgba(var(--accent-rgb), 0.06);
   border: 1px solid rgba(var(--accent-rgb), 0.18);
-  border-radius: 6px;
-  letter-spacing: 0.3px;
+  border-radius: 5px;
+  letter-spacing: 0.2px;
 }
 
 .autoBetDot {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background: var(--accent);
   flex-shrink: 0;
@@ -316,27 +306,28 @@
 
 .autoBetCount {
   margin-left: auto;
-  color: rgba(var(--accent-rgb), 0.5);
-  font-size: 10px;
+  color: rgba(var(--accent-rgb), 0.55);
+  font-size: 9px;
   font-weight: 700;
 }
 
 /* ── Action area ── */
 .actionArea {
-  padding-top: 13px;
+  padding-top: 10px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
+  margin-top: auto;
 }
 
 /* ── Base action button ── */
 .actionBtn {
   width: 100%;
-  padding: 12px;
-  border-radius: 6px;
-  font-size: 12px;
+  padding: 9px 6px;
+  border-radius: 5px;
+  font-size: 10px;
   font-weight: 800;
-  letter-spacing: 1.5px;
+  letter-spacing: 1.2px;
   cursor: pointer;
   transition: all 0.15s;
   border: none;
@@ -348,15 +339,15 @@
   background: rgba(var(--accent-rgb), 0.08);
   border: 1px solid rgba(var(--accent-rgb), 0.35);
   color: var(--accent);
-  padding: 14px 12px;
-  font-size: 13px;
-  letter-spacing: 2px;
+  padding: 11px 6px;
+  font-size: 11px;
+  letter-spacing: 1.5px;
 }
 
 .placeBetBtn:hover {
   background: rgba(var(--accent-rgb), 0.15);
   border-color: rgba(var(--accent-rgb), 0.6);
-  box-shadow: 0 0 14px rgba(var(--accent-rgb), 0.2);
+  box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.2);
 }
 
 .placeBetBtn:active { opacity: 0.85; }
@@ -370,14 +361,14 @@
   flex-direction: column;
   align-items: center;
   gap: 1px;
-  padding: 10px 12px;
+  padding: 8px 6px;
   animation: cashoutPulse 0.95s ease-in-out infinite;
 }
 
 .cashoutBtn:hover {
   background: rgba(249, 115, 22, 0.15);
   border-color: rgba(249, 115, 22, 0.6);
-  box-shadow: 0 0 14px rgba(249, 115, 22, 0.2);
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.2);
   animation: none;
 }
 
@@ -385,11 +376,11 @@
 
 @keyframes cashoutPulse {
   0%, 100% { border-color: rgba(249, 115, 22, 0.35); box-shadow: none; }
-  50%       { border-color: rgba(249, 115, 22, 0.6);  box-shadow: 0 0 12px rgba(249, 115, 22, 0.18); }
+  50%       { border-color: rgba(249, 115, 22, 0.6);  box-shadow: 0 0 10px rgba(249, 115, 22, 0.18); }
 }
 
-.cashoutLabel  { font-size: 9px; opacity: 0.65; font-weight: 700; letter-spacing: 2.5px; }
-.cashoutAmount { font-size: 19px; font-weight: 900; letter-spacing: -0.3px; }
+.cashoutLabel  { font-size: 8px; opacity: 0.65; font-weight: 700; letter-spacing: 2px; }
+.cashoutAmount { font-size: 15px; font-weight: 900; letter-spacing: -0.3px; }
 
 /* Bet Next Round */
 .nextRoundBtn {
@@ -397,15 +388,14 @@
   border: 1px solid rgba(var(--accent-rgb), 0.2);
   color: var(--accent);
   opacity: 0.6;
-  padding: 10px 12px;
-  font-size: 10px;
-  letter-spacing: 2px;
+  font-size: 9px;
+  letter-spacing: 1.5px;
 }
 
 .nextRoundBtn:hover {
   background: rgba(var(--accent-rgb), 0.08);
   border-color: rgba(var(--accent-rgb), 0.4);
-  box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.12);
+  box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.12);
   opacity: 1;
 }
 
@@ -414,121 +404,111 @@
   background: rgba(139, 92, 246, 0.08);
   border: 1px solid rgba(139, 92, 246, 0.35);
   color: #a78bfa;
-  font-size: 10px;
-  padding: 10px 12px;
-  letter-spacing: 1.8px;
+  font-size: 9px;
+  padding: 8px 6px;
+  letter-spacing: 1.5px;
 }
 
 .autoBetStartBtn:hover {
   background: rgba(139, 92, 246, 0.15);
   border-color: rgba(139, 92, 246, 0.6);
-  box-shadow: 0 0 14px rgba(139, 92, 246, 0.18);
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.18);
 }
 
 .autoBetStopBtn {
   background: rgba(239, 68, 68, 0.08);
   border: 1px solid rgba(239, 68, 68, 0.35);
   color: #f87171;
-  font-size: 10px;
-  padding: 10px 12px;
-  letter-spacing: 1.8px;
+  font-size: 9px;
+  padding: 8px 6px;
+  letter-spacing: 1.5px;
 }
 
 .autoBetStopBtn:hover {
   background: rgba(239, 68, 68, 0.15);
   border-color: rgba(239, 68, 68, 0.6);
-  box-shadow: 0 0 14px rgba(239, 68, 68, 0.18);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.18);
 }
 
 /* ── Status badges ── */
 .betPlacedBadge {
   display: flex;
   align-items: center;
-  gap: 9px;
-  font-size: 11px;
-  font-weight: 600;
+  justify-content: center;
+  gap: 6px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
   color: var(--accent);
-  padding: 11px 13px;
+  padding: 9px 6px;
   background: rgba(var(--accent-rgb), 0.06);
   border: 1px solid rgba(var(--accent-rgb), 0.18);
-  border-radius: 6px;
-  letter-spacing: 0.3px;
+  border-radius: 5px;
 }
 
 .betPlacedDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 5px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
   background: var(--accent);
   flex-shrink: 0;
-  box-shadow: 0 0 7px var(--accent);
+  box-shadow: 0 0 6px var(--accent);
   animation: dotPulse 1.4s ease-in-out infinite;
 }
 
 .nextRoundQueued {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 11px;
+  gap: 6px;
+  font-size: 9px;
   color: #8b5cf6;
-  font-weight: 600;
-  padding: 10px 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 8px 9px;
   background: rgba(139, 92, 246, 0.05);
   border: 1px solid rgba(139, 92, 246, 0.18);
-  border-radius: 6px;
-}
-
-.nextRoundQueuedLeft {
-  display: flex;
-  align-items: center;
-  gap: 7px;
+  border-radius: 5px;
 }
 
 .nextRoundDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 5px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
   background: #8b5cf6;
   flex-shrink: 0;
   animation: dotPulse 1.4s ease-in-out infinite;
 }
 
 .nextRoundCancel {
+  margin-left: auto;
   background: transparent;
-  border: 1px solid rgba(239, 68, 68, 0.22);
-  border-radius: 5px;
-  color: #f87171;
-  font-size: 9px;
-  font-weight: 800;
-  padding: 4px 10px;
+  border: none;
+  color: #6b7280;
+  font-size: 11px;
   cursor: pointer;
-  transition: all 0.14s;
+  padding: 0 2px;
+  transition: color 0.14s;
   flex-shrink: 0;
-  letter-spacing: 1px;
-  text-transform: uppercase;
 }
 
-.nextRoundCancel:hover {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.45);
-}
+.nextRoundCancel:hover { color: #f87171; }
 
 /* ── Cashed out result ── */
 .cashedOutInfo {
   background: rgba(34, 197, 94, 0.06);
   border: 1px solid rgba(34, 197, 94, 0.18);
-  border-radius: 6px;
-  padding: 13px;
+  border-radius: 5px;
+  padding: 9px 6px;
   text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
-.cashedOutLabel { color: #4b5563; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; }
-.cashedOutMult  { color: #22c55e; font-size: 28px; font-weight: 900; line-height: 1.1; letter-spacing: -0.5px; }
-.cashedOutWin   { color: #4ade80; font-size: 12px; font-weight: 700; }
+.cashedOutMult { color: #22c55e; font-size: 20px; font-weight: 900; line-height: 1.1; letter-spacing: -0.5px; }
+.cashedOutWin  { color: #4ade80; font-size: 10px; font-weight: 700; }
 
 /* ── Animations ── */
 @keyframes dotPulse {
@@ -538,9 +518,8 @@
 
 /* ── Responsive ── */
 @media (max-width: 700px) {
-  .slot { padding: 13px 11px 11px; }
-  .tab { font-size: 9px; padding: 10px 4px 11px; letter-spacing: 1.2px; }
-  .actionBtn { font-size: 11px; }
-  .placeBetBtn { font-size: 12px; padding: 13px; }
-  .amountInput { font-size: 24px; }
+  .slot { padding: 8px 8px 9px; }
+  .actionBtn { font-size: 9px; }
+  .amountInput { font-size: 17px; }
+  .stepBtn { width: 22px; height: 22px; font-size: 13px; }
 }
