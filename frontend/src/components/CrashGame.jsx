@@ -14,7 +14,7 @@ import styles from './CrashGame.module.css'
 export default function CrashGame() {
   const game = useCrashGame()
   const { user, logout, demoMode, demoBalance, enterDemo, updateDemoBalance } = useAuth()
-  const { muted, toggleMute, startBgMusic, stopBgMusic, playBetPlaced, playRoundStart, playRingPass, playCashout, playCrash } = useSounds()
+  const { muted, toggleMute, playBetPlaced, playRoundStart, playRingPass, playCashout, playCrash } = useSounds()
   const [showAuth, setShowAuth] = useState(false)
   const [activeTab, setActiveTab] = useState('my')
 
@@ -24,9 +24,6 @@ export default function CrashGame() {
     cashedOut2, cashedOut3,
     error, connected,
   } = game
-
-  // Stop background music on unmount
-  useEffect(() => () => stopBgMusic(), []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Phase change sounds
   const prevPhaseRef = useRef(null)

@@ -193,7 +193,7 @@ function BetSlot({
         {canCashOut && (
           <button className={`${styles.actionBtn} ${styles.cashoutBtn}`} onClick={cashOut}>
             <span className={styles.cashoutLabel}>Cash Out</span>
-            <span className={styles.cashoutAmount}>C {potentialWin}</span>
+            <span className={styles.cashoutAmount}>{potentialWin}</span>
           </button>
         )}
 

@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, useEffect } from 'react'
+import { useRef, useState, useCallback } from 'react'
 
 // ── Audio context (singleton) ─────────────────────────────────────────────
 let _ctx = null
@@ -9,71 +9,6 @@ function getCtx() {
   return _ctx
 }
 
-// ── Background music state (module-level so it survives re-renders) ───────
-let _bgOscillators = []
-let _bgMaster = null
-
-function _startBg(ctx) {
-  if (_bgOscillators.length > 0) return
-
-  // Master output with slow fade-in
-  _bgMaster = ctx.createGain()
-  _bgMaster.gain.value = 0
-  _bgMaster.connect(ctx.destination)
-  _bgMaster.gain.linearRampToValueAtTime(0.055, ctx.currentTime + 3.5)
-
-  // Low-frequency oscillator modulates master volume (0.07 Hz ≈ 14-second swell)
-  const lfo = ctx.createOscillator()
-  const lfoAmt = ctx.createGain()
-  lfo.type = 'sine'
-  lfo.frequency.value = 0.07
-  lfoAmt.gain.value = 0.018
-  lfo.connect(lfoAmt)
-  lfoAmt.connect(_bgMaster.gain)
-
-  // Helper: create one voice and wire it
-  function voice(type, freq, detune, gain) {
-    const osc = ctx.createOscillator()
-    const g = ctx.createGain()
-    osc.type = type
-    osc.frequency.value = freq
-    osc.detune.value = detune ?? 0
-    g.gain.value = gain
-    osc.connect(g)
-    g.connect(_bgMaster)
-    osc.start()
-    return osc
-  }
-
-  // Tense minor-chord drone: root + min-3rd + 5th across three octaves
-  const v1  = voice('sine',     55,    0,   0.80)  // A1 root — deep bass
-  const v2  = voice('sine',     55.25, 0,   0.40)  // A1 detuned — slow beating pulse
-  const v3  = voice('triangle', 110,   0,   0.28)  // A2 octave
-  const v4  = voice('sine',     130.8, 0,   0.20)  // C3 minor 3rd
-  const v5  = voice('triangle', 165,   0,   0.14)  // E3 perfect 5th
-  const v6  = voice('sine',     220,  -8,   0.08)  // A3 — slight detune shimmer
-  const v7  = voice('sine',     261.6, 0,   0.04)  // C4 very quiet top layer
-
-  lfo.start()
-  _bgOscillators = [v1, v2, v3, v4, v5, v6, v7, lfo]
-}
-
-function _stopBg() {
-  if (!_bgOscillators.length) return
-  const master = _bgMaster
-  const oscs = _bgOscillators
-  _bgOscillators = []
-  _bgMaster = null
-
-  if (master && _ctx) {
-    try {
-      master.gain.cancelScheduledValues(_ctx.currentTime)
-      master.gain.linearRampToValueAtTime(0, _ctx.currentTime + 1.2)
-    } catch {}
-  }
-  setTimeout(() => oscs.forEach(o => { try { o.stop() } catch {} }), 1300)
-}
-
 // ── Hook ──────────────────────────────────────────────────────────────────
 export function useSounds() {
   const [muted, setMuted] = useState(() => {
@@ -81,45 +16,19 @@ export function useSounds() {
   })
   const mutedRef = useRef(muted)
 
-  // Keep bg music running / stopped in sync with mute state
-  useEffect(() => {
-    if (!muted) {
-      // Don't auto-start here — wait for first user interaction via play()
-    } else {
-      _stopBg()
-    }
-  }, [muted])
-
-  // Stop bg on unmount
-  useEffect(() => () => _stopBg(), [])
-
   const toggleMute = useCallback(() => {
     setMuted(prev => {
       const next = !prev
       mutedRef.current = next
       try { localStorage.setItem('spear_muted', String(next)) } catch {}
-      if (next) _stopBg()
       return next
     })
   }, [])
 
-  // Core play helper — also boots background music on first real sound
   const play = useCallback((fn) => {
     if (mutedRef.current) return
-    try {
-      const ctx = getCtx()
-      fn(ctx)
-      _startBg(ctx)   // no-op if already running
-    } catch {}
+    try { fn(getCtx()) } catch {}
   }, [])
-
-  // ── Explicitly start / stop bg (for external control) ──────────────────
-  const startBgMusic = useCallback(() => {
-    if (mutedRef.current) return
-    try { _startBg(getCtx()) } catch {}
-  }, [])
-
-  const stopBgMusic = useCallback(() => _stopBg(), [])
 
   // ── Bet placed — soft two-note chime (replaces old 880 Hz ping) ─────────
   const playBetPlaced = useCallback(() => play(ctx => {
@@ -280,7 +189,6 @@ export function useSounds() {
 
   return {
     muted, toggleMute,
-    startBgMusic, stopBgMusic,
     playBetPlaced, playRoundStart, playRingPass, playCashout, playCrash,
   }
 }
