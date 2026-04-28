@@ -47,11 +47,24 @@ export function useCrashGame() {
   const [autoBetCount2, setAutoBetCount2] = useState(0)
   const [autoBetLimit2, setAutoBetLimit2State] = useState(() => loadFromStorage('spear_autoBetLimit2', 0))
 
+  // Bet 3
+  const [bet3Amount, setBet3Amount] = useState(10)
+  const [autoCashout3, setAutoCashout3] = useState(() => loadFromStorage('spear_autoCashout3', ''))
+  const [autoCashout3Enabled, setAutoCashout3Enabled] = useState(() => loadFromStorage('spear_autoCashout3Enabled', false))
+  const [bet3Placed, setBet3Placed] = useState(false)
+  const [cashedOut3, setCashedOut3] = useState(false)
+  const [cashedOut3At, setCashedOut3At] = useState(null)
+  const [lastWin3, setLastWin3] = useState(null)
+  const [autoBet3, setAutoBet3State] = useState(() => loadFromStorage('spear_autoBet3', false))
+  const [autoBetCount3, setAutoBetCount3] = useState(0)
+  const [autoBetLimit3, setAutoBetLimit3State] = useState(() => loadFromStorage('spear_autoBetLimit3', 0))
+
   const [history, setHistory] = useState([])
   const [betHistory, setBetHistory] = useState([])
   const [liveBets, setLiveBets] = useState([])
   const [nextRoundBet, setNextRoundBet] = useState(false)
   const [nextRoundBet2, setNextRoundBet2] = useState(false)
+  const [nextRoundBet3, setNextRoundBet3] = useState(false)
   const [error, setError] = useState(null)
   const [connected, setConnected] = useState(false)
 
@@ -65,6 +78,10 @@ export function useCrashGame() {
   const cashedOut2Ref = useRef(false)
   const currentBet2IdRef = useRef(null)
   const pendingBet2AmountRef = useRef(0)
+  const bet3PlacedRef = useRef(false)
+  const cashedOut3Ref = useRef(false)
+  const currentBet3IdRef = useRef(null)
+  const pendingBet3AmountRef = useRef(0)
   const countdownIntervalRef = useRef(null)
   const userRef = useRef(user)
   const autoBetRef = useRef(loadFromStorage('spear_autoBet', false))
@@ -73,15 +90,20 @@ export function useCrashGame() {
   const autoBet2Ref = useRef(loadFromStorage('spear_autoBet2', false))
   const autoBetCount2Ref = useRef(0)
   const autoBetLimit2Ref = useRef(loadFromStorage('spear_autoBetLimit2', 0))
+  const autoBet3Ref = useRef(loadFromStorage('spear_autoBet3', false))
+  const autoBetCount3Ref = useRef(0)
+  const autoBetLimit3Ref = useRef(loadFromStorage('spear_autoBetLimit3', 0))
   const currentRoundNumberRef = useRef(null)
   const placeBetRef = useRef(null)
   const placeBet2Ref = useRef(null)
+  const placeBet3Ref = useRef(null)
   const updateBalanceRef = useRef(updateBalance)
   const prevUserIdRef = useRef(undefined)
 
   // Next-round queued bet refs
   const nextRoundBetRef = useRef(false)
   const nextRoundBet2Ref = useRef(false)
+  const nextRoundBet3Ref = useRef(false)
 
   // Demo mode refs
   const demoModeRef = useRef(demoMode)
@@ -89,6 +111,7 @@ export function useCrashGame() {
   const multiplierRef = useRef(1.0)
   const demoBet1AutoCashoutRef = useRef(null)
   const demoBet2AutoCashoutRef = useRef(null)
+  const demoBet3AutoCashoutRef = useRef(null)
 
   useEffect(() => { userRef.current = user }, [user])
   useEffect(() => { updateBalanceRef.current = updateBalance }, [updateBalance])
@@ -96,6 +119,7 @@ export function useCrashGame() {
   useEffect(() => { updateDemoBalanceRef.current = updateDemoBalance }, [updateDemoBalance])
   useEffect(() => { nextRoundBetRef.current = nextRoundBet }, [nextRoundBet])
   useEffect(() => { nextRoundBet2Ref.current = nextRoundBet2 }, [nextRoundBet2])
+  useEffect(() => { nextRoundBet3Ref.current = nextRoundBet3 }, [nextRoundBet3])
 
   // Persist auto settings across page refreshes
   useEffect(() => { localStorage.setItem('spear_autoCashout', JSON.stringify(autoCashout)) }, [autoCashout])
@@ -106,6 +130,10 @@ export function useCrashGame() {
   useEffect(() => { localStorage.setItem('spear_autoCashout2Enabled', JSON.stringify(autoCashout2Enabled)) }, [autoCashout2Enabled])
   useEffect(() => { localStorage.setItem('spear_autoBet2', JSON.stringify(autoBet2)) }, [autoBet2])
   useEffect(() => { localStorage.setItem('spear_autoBetLimit2', JSON.stringify(autoBetLimit2)) }, [autoBetLimit2])
+  useEffect(() => { localStorage.setItem('spear_autoCashout3', JSON.stringify(autoCashout3)) }, [autoCashout3])
+  useEffect(() => { localStorage.setItem('spear_autoCashout3Enabled', JSON.stringify(autoCashout3Enabled)) }, [autoCashout3Enabled])
+  useEffect(() => { localStorage.setItem('spear_autoBet3', JSON.stringify(autoBet3)) }, [autoBet3])
+  useEffect(() => { localStorage.setItem('spear_autoBetLimit3', JSON.stringify(autoBetLimit3)) }, [autoBetLimit3])
 
   // Fetches the current round from the server and syncs phase / multiplier / countdown.
   // Called every time a SignalR connection is (re)established so the UI is always current.
@@ -193,6 +221,16 @@ export function useCrashGame() {
     currentBet2IdRef.current = null
     demoBet2AutoCashoutRef.current = null
 
+    // Reset bet 3 state
+    setBet3Placed(false)
+    bet3PlacedRef.current = false
+    cashedOut3Ref.current = false
+    setCashedOut3(false)
+    setCashedOut3At(null)
+    setLastWin3(null)
+    currentBet3IdRef.current = null
+    demoBet3AutoCashoutRef.current = null
+
     setError(null)
 
     // Only reset auto bet toggles on login/logout, not on page refresh with same user
@@ -205,12 +243,18 @@ export function useCrashGame() {
       autoBet2Ref.current = false
       setAutoBetCount2(0)
       autoBetCount2Ref.current = 0
+      setAutoBet3State(false)
+      autoBet3Ref.current = false
+      setAutoBetCount3(0)
+      autoBetCount3Ref.current = 0
     }
 
     setNextRoundBet(false)
     nextRoundBetRef.current = false
     setNextRoundBet2(false)
     nextRoundBet2Ref.current = false
+    setNextRoundBet3(false)
+    nextRoundBet3Ref.current = false
 
     if (!userId) {
       setBetHistory([])
@@ -233,6 +277,12 @@ export function useCrashGame() {
           bet2PlacedRef.current = true
           currentBet2IdRef.current = bets[1].id
           pendingBet2AmountRef.current = Number(bets[1].amount)
+        }
+        if (bets.length > 2 && phaseRef.current !== 'crashed') {
+          setBet3Placed(true)
+          bet3PlacedRef.current = true
+          currentBet3IdRef.current = bets[2].id
+          pendingBet3AmountRef.current = Number(bets[2].amount)
         }
       })
       .catch(() => {})
@@ -273,6 +323,14 @@ export function useCrashGame() {
     setLastWin2(null)
     currentBet2IdRef.current = null
     demoBet2AutoCashoutRef.current = null
+    setBet3Placed(false)
+    bet3PlacedRef.current = false
+    cashedOut3Ref.current = false
+    setCashedOut3(false)
+    setCashedOut3At(null)
+    setLastWin3(null)
+    currentBet3IdRef.current = null
+    demoBet3AutoCashoutRef.current = null
 
     setError(null)
     // Re-seed All Bets from server so other players' history stays visible in demo mode
@@ -334,6 +392,14 @@ export function useCrashGame() {
       setLastWin2(null)
       currentBet2IdRef.current = null
       demoBet2AutoCashoutRef.current = null
+      bet3PlacedRef.current = false
+      setBet3Placed(false)
+      cashedOut3Ref.current = false
+      setCashedOut3(false)
+      setCashedOut3At(null)
+      setLastWin3(null)
+      currentBet3IdRef.current = null
+      demoBet3AutoCashoutRef.current = null
       setMultiplier(1.0)
       setCrashPoint(null)
       setError(null)
@@ -355,6 +421,14 @@ export function useCrashGame() {
           if (phaseRef.current !== 'waiting' || bet2PlacedRef.current) return
           placeBet2Ref.current?.().catch(() => {})
         }, 350)
+      }
+      if (nextRoundBet3Ref.current && !autoBet3Ref.current) {
+        nextRoundBet3Ref.current = false
+        setNextRoundBet3(false)
+        setTimeout(() => {
+          if (phaseRef.current !== 'waiting' || bet3PlacedRef.current) return
+          placeBet3Ref.current?.().catch(() => {})
+        }, 550)
       }
 
       // Auto bet 1: fire after state has fully reset
@@ -394,6 +468,26 @@ export function useCrashGame() {
               }
             }).catch(() => {})
           }, 500)
+        }
+      }
+
+      // Auto bet 3: fire after bet 2
+      if (autoBet3Ref.current) {
+        const limit3 = autoBetLimit3Ref.current
+        const count3 = autoBetCount3Ref.current
+        if (limit3 > 0 && count3 >= limit3) {
+          autoBet3Ref.current = false
+          setAutoBet3State(false)
+        } else {
+          setTimeout(() => {
+            if (!autoBet3Ref.current || bet3PlacedRef.current || phaseRef.current !== 'waiting') return
+            placeBet3Ref.current?.().then(() => {
+              if (bet3PlacedRef.current) {
+                autoBetCount3Ref.current += 1
+                setAutoBetCount3(c => c + 1)
+              }
+            }).catch(() => {})
+          }, 700)
         }
       }
 
@@ -447,6 +541,22 @@ export function useCrashGame() {
           const autoCo2 = { id: currentBet2IdRef.current, roundNumber: currentRoundNumberRef.current, bet: pendingBet2AmountRef.current, crashPoint: null, cashedOutAt: mNum, profit: parseFloat((pendingBet2AmountRef.current * (mNum - 1)).toFixed(2)), won: true }
           setBetHistory(prev => [autoCo2, ...prev].slice(0, 30))
           setLiveBets(prev => [{ id: autoCo2.id, username: 'Demo', bet: autoCo2.bet, cashedOutAt: mNum, profit: autoCo2.profit, won: true }, ...prev].slice(0, 30))
+        }
+      }
+
+      // Demo auto-cashout for bet 3
+      if (bet3PlacedRef.current && !cashedOut3Ref.current) {
+        const thresh3 = demoBet3AutoCashoutRef.current
+        if (thresh3 && mNum >= thresh3) {
+          cashedOut3Ref.current = true
+          setCashedOut3(true)
+          setCashedOut3At(mNum)
+          const win3 = parseFloat((pendingBet3AmountRef.current * mNum).toFixed(2))
+          setLastWin3(win3)
+          updateDemoBalanceRef.current(prev => prev + win3)
+          const autoCo3 = { id: currentBet3IdRef.current, roundNumber: currentRoundNumberRef.current, bet: pendingBet3AmountRef.current, crashPoint: null, cashedOutAt: mNum, profit: parseFloat((pendingBet3AmountRef.current * (mNum - 1)).toFixed(2)), won: true }
+          setBetHistory(prev => [autoCo3, ...prev].slice(0, 30))
+          setLiveBets(prev => [{ id: autoCo3.id, username: 'Demo', bet: autoCo3.bet, cashedOutAt: mNum, profit: autoCo3.profit, won: true }, ...prev].slice(0, 30))
         }
       }
     })
@@ -506,6 +616,28 @@ export function useCrashGame() {
           }
         }
 
+        // Handle bet 3 crash
+        if (bet3PlacedRef.current) {
+          if (!cashedOut3Ref.current) {
+            result = [
+              {
+                id: `lost3-${Date.now()}`,
+                roundNumber: rnNum,
+                bet: pendingBet3AmountRef.current,
+                crashPoint: cpNum,
+                cashedOutAt: null,
+                profit: -pendingBet3AmountRef.current,
+                won: false,
+              },
+              ...result,
+            ]
+          } else {
+            result = result.map(entry =>
+              entry.id === currentBet3IdRef.current ? { ...entry, crashPoint: cpNum } : entry
+            )
+          }
+        }
+
         return result.slice(0, 30)
       })
 
@@ -525,6 +657,11 @@ export function useCrashGame() {
           if (bet2PlacedRef.current && !cashedOut2Ref.current) {
             if (!result.some(e => e.id === currentBet2IdRef.current)) {
               result = [{ id: `lost2-live-${Date.now()}`, username: liveUsername, bet: pendingBet2AmountRef.current, cashedOutAt: null, profit: -pendingBet2AmountRef.current, won: false, pending: false }, ...result]
+            }
+          }
+          if (bet3PlacedRef.current && !cashedOut3Ref.current) {
+            if (!result.some(e => e.id === currentBet3IdRef.current)) {
+              result = [{ id: `lost3-live-${Date.now()}`, username: liveUsername, bet: pendingBet3AmountRef.current, cashedOutAt: null, profit: -pendingBet3AmountRef.current, won: false, pending: false }, ...result]
             }
           }
         }
@@ -586,6 +723,24 @@ export function useCrashGame() {
         setCashedOut2(true)
         setCashedOut2At(safeMult)
         setLastWin2(winAmount)
+        updateBalanceRef.current(prev => prev + winAmount)
+        setBetHistory(prev => [
+          {
+            id: betId,
+            roundNumber: currentRoundNumberRef.current,
+            bet: safeAmount,
+            crashPoint: null,
+            cashedOutAt: safeMult,
+            profit: safeProfit,
+            won: true,
+          },
+          ...prev,
+        ].slice(0, 30))
+      } else if (betId === currentBet3IdRef.current && !cashedOut3Ref.current) {
+        cashedOut3Ref.current = true
+        setCashedOut3(true)
+        setCashedOut3At(safeMult)
+        setLastWin3(winAmount)
         updateBalanceRef.current(prev => prev + winAmount)
         setBetHistory(prev => [
           {
@@ -692,11 +847,44 @@ export function useCrashGame() {
   }, [bet2Amount, autoCashout2, autoCashout2Enabled, updateBalance])
   placeBet2Ref.current = placeBet2
 
+  const placeBet3 = useCallback(async () => {
+    if (phaseRef.current !== 'waiting' || bet3PlacedRef.current) return
+    if (!userRef.current && !demoModeRef.current) { setError('Please log in to place a bet.'); return }
+    setError(null)
+
+    if (demoModeRef.current) {
+      currentBet3IdRef.current = `demo3-${Date.now()}`
+      demoBet3AutoCashoutRef.current = autoCashout3Enabled && autoCashout3 ? parseFloat(autoCashout3) : null
+      bet3PlacedRef.current = true
+      setBet3Placed(true)
+      pendingBet3AmountRef.current = bet3Amount
+      updateDemoBalanceRef.current(prev => prev - bet3Amount)
+      return
+    }
+
+    try {
+      const autoCashoutVal = autoCashout3Enabled && autoCashout3 ? parseFloat(autoCashout3) : null
+      const result = await apiPlaceBet(bet3Amount, autoCashoutVal)
+      bet3PlacedRef.current = true
+      setBet3Placed(true)
+      currentBet3IdRef.current = result.id
+      pendingBet3AmountRef.current = bet3Amount
+      updateBalance(prev => prev - bet3Amount)
+    } catch (err) {
+      setError(err.message)
+    }
+  }, [bet3Amount, autoCashout3, autoCashout3Enabled, updateBalance])
+  placeBet3Ref.current = placeBet3
+
   const cancelBet = useCallback(() => {
     // Backend has no cancel-bet endpoint
   }, [])
 
   const cancelBet2 = useCallback(() => {
+    // Backend has no cancel-bet endpoint
+  }, [])
+
+  const cancelBet3 = useCallback(() => {
     // Backend has no cancel-bet endpoint
   }, [])
 
@@ -818,6 +1006,65 @@ export function useCrashGame() {
     }
   }, [updateBalance])
 
+  const cashOut3 = useCallback(async () => {
+    if (phaseRef.current !== 'running' || cashedOut3Ref.current || !bet3PlacedRef.current) return
+    setError(null)
+
+    if (demoModeRef.current) {
+      const mNum = multiplierRef.current
+      cashedOut3Ref.current = true
+      setCashedOut3(true)
+      setCashedOut3At(mNum)
+      const win = parseFloat((pendingBet3AmountRef.current * mNum).toFixed(2))
+      setLastWin3(win)
+      updateDemoBalanceRef.current(prev => prev + win)
+      const demoEntry3 = {
+        id: currentBet3IdRef.current,
+        roundNumber: currentRoundNumberRef.current,
+        bet: pendingBet3AmountRef.current,
+        crashPoint: null,
+        cashedOutAt: mNum,
+        profit: parseFloat((pendingBet3AmountRef.current * (mNum - 1)).toFixed(2)),
+        won: true,
+      }
+      setBetHistory(prev => [demoEntry3, ...prev].slice(0, 30))
+      setLiveBets(prev => [{ id: demoEntry3.id, username: 'Demo', bet: demoEntry3.bet, cashedOutAt: mNum, profit: demoEntry3.profit, won: true }, ...prev].slice(0, 30))
+      return
+    }
+
+    if (!currentBet3IdRef.current) return
+
+    cashedOut3Ref.current = true  // Optimistic — blocks PlayerCashedOut from double-processing
+    try {
+      const result = await apiCashout(currentBet3IdRef.current)
+      setCashedOut3(true)
+      const cashMult = Number(result.cashedOutAt)
+      setCashedOut3At(cashMult)
+      const winAmount = Number(result.amount) + Number(result.profit)
+      setLastWin3(winAmount)
+      updateBalance(prev => prev + winAmount)
+
+      const entry3 = {
+        id: result.id,
+        roundNumber: result.roundNumber != null ? Number(result.roundNumber) : null,
+        bet: Number(result.amount),
+        crashPoint: null,
+        cashedOutAt: cashMult,
+        profit: Number(result.profit),
+        won: true,
+      }
+      setBetHistory(prev => [entry3, ...prev].slice(0, 30))
+      setLiveBets(prev => {
+        const liveEntry3 = { id: entry3.id, username: userRef.current?.username ?? '', bet: entry3.bet, cashedOutAt: cashMult, profit: entry3.profit, won: true, pending: false }
+        if (prev.some(e => e.id === entry3.id)) return prev.map(e => e.id === entry3.id ? liveEntry3 : e)
+        return [liveEntry3, ...prev].slice(0, 30)
+      })
+    } catch (err) {
+      cashedOut3Ref.current = false  // Reset on failure so user can retry
+      setError(err.message)
+    }
+  }, [updateBalance])
+
   return {
     phase,
     multiplier,
@@ -867,6 +1114,27 @@ export function useCrashGame() {
     cancelBet2,
     cashOut2,
 
+    // Bet 3
+    bet3Amount,
+    setBet3Amount,
+    autoCashout3,
+    setAutoCashout3,
+    autoCashout3Enabled,
+    setAutoCashout3Enabled,
+    autoBet3,
+    setAutoBet3: (v) => { setAutoBet3State(v); autoBet3Ref.current = v },
+    autoBetCount3,
+    autoBetLimit3,
+    setAutoBetLimit3: (v) => { setAutoBetLimit3State(v); autoBetLimit3Ref.current = v },
+    resetAutoBetCount3: () => { setAutoBetCount3(0); autoBetCount3Ref.current = 0 },
+    bet3Placed,
+    cashedOut3,
+    cashedOut3At,
+    lastWin3,
+    placeBet3,
+    cancelBet3,
+    cashOut3,
+
     history,
     betHistory,
     liveBets,
@@ -874,6 +1142,8 @@ export function useCrashGame() {
     setNextRoundBet: (v) => { setNextRoundBet(v); nextRoundBetRef.current = v },
     nextRoundBet2,
     setNextRoundBet2: (v) => { setNextRoundBet2(v); nextRoundBet2Ref.current = v },
+    nextRoundBet3,
+    setNextRoundBet3: (v) => { setNextRoundBet3(v); nextRoundBet3Ref.current = v },
     error,
     connected,
     isAuthenticated: !!user,

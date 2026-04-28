@@ -109,7 +109,11 @@ if (app.Environment.IsDevelopment())
         c.RoutePrefix = "swagger";
     });
 }
+//// Serve static files from wwwroot
+//app.UseDefaultFiles();
+//app.UseStaticFiles();
 
+//app.UseCors("AllowReactApp"); // ← This line must be here
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();

@@ -403,6 +403,36 @@
   50%       { opacity: 0.5; transform: scale(0.85); }
 }
 
+/* ── Header right wrapper ── */
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ── Mute button ── */
+.muteBtn {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: #4b5563;
+  padding: 7px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.muteBtn:hover {
+  color: #9ca3af;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+.muteBtnActive {
+  color: #cbd5e6;
+}
+
 /* ── Auth header elements ── */
 .userInfo {
   display: flex;
@@ -645,6 +675,8 @@
   .logo          { gap: 8px; }
   .logoIcon      { width: 26px; height: 26px; }
   .logoText      { font-size: 18px; }
+  .headerRight   { gap: 6px; }
+  .muteBtn       { padding: 5px 8px; }
   .userInfo      { gap: 5px; }
   .userName      { padding: 4px 9px; font-size: 11px; max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .userBalance   { padding: 4px 9px; font-size: 12px; }

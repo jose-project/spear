@@ -1830,9 +1830,10 @@ export default function CrashGraph({ phase, multiplier, crashPoint, countdown })
         updateParticles(particlesRef.current, dt)
 
         const { width: w, height: h } = canvas
-        const scale    = Math.min(1, Math.max(0.6, h / 320))
-        const spriteH  = Math.round(SPRITE_DISPLAY_H * scale)
-        const spearLen = Math.round(SPEAR_LEN * scale)
+        const scale     = Math.min(1, Math.max(0.6, h / 320))
+        const spriteH   = Math.round(SPRITE_DISPLAY_H * scale)
+        const distScale = Math.max(0.60, Math.pow(curM, -0.07))
+        const spearLen  = Math.round(SPEAR_LEN * scale * distScale)
         const gY   = h - PAD_B
         const pts  = pointsRef.current
         const figX = PAD_L + 30
@@ -1949,7 +1950,7 @@ export default function CrashGraph({ phase, multiplier, crashPoint, countdown })
           // Multiplier label — offset perpendicular to spear (upper-left side), clamped to canvas
           const label = `${curM.toFixed(2)}x`
           ctx.save()
-          const fontSize = Math.round(Math.max(12, Math.min(34, w / 10) * scale))
+          const fontSize = Math.round(Math.max(8, Math.min(34, w / 10) * scale * distScale))
           ctx.font         = `bold ${fontSize}px Inter,sans-serif`
           ctx.textAlign    = 'center'
           ctx.textBaseline = 'middle'

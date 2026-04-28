@@ -1,0 +1,4 @@
+2026-04-28 01:39:08.676 -07:00 [INF] Spear.API.Services.GameLoopService Game loop started.
+2026-04-28 01:40:49.954 -07:00 [INF] Spear.API.Services.GameLoopService Game loop started.
+2026-04-28 01:40:58.589 -07:00 [INF] Spear.API.Services.GameLoopService Round 738 crashed at 1.14x
+2026-04-28 01:41:19.073 -07:00 [INF] Spear.API.Services.GameLoopService Round 739 crashed at 2.11x

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import styles from './LoadingScreen.module.css'
+import rushcoreLogo from '../assets/rushcore_logo.png'
 
 export default function LoadingScreen({ onDone }) {
   const [fading, setFading] = useState(false)
@@ -17,7 +18,7 @@ export default function LoadingScreen({ onDone }) {
     <div className={`${styles.screen} ${fading ? styles.fadeOut : ''}`}>
       <div className={styles.content}>
         <img
-          src="/src/assets/rushcore_logo.png"
+          src={rushcoreLogo}
           alt="RushCore Gaming"
           className={styles.logo}
         />
