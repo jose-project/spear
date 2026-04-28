@@ -1,5 +1,11 @@
 import styles from './BetHistory.module.css'
 
+function fmtTime(ts) {
+  if (!ts) return ''
+  const d = new Date(ts)
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+}
+
 export default function LiveBets({ liveBets }) {
   if (!liveBets || liveBets.length === 0) {
     return <div className={styles.empty}>No bets yet this round.</div>
@@ -29,7 +35,7 @@ export default function LiveBets({ liveBets }) {
 
             <div className={styles.meta}>
               <span className={styles.metaTop}>{row.username || '—'}</span>
-              <span className={styles.metaSub}>Bet {row.bet.toFixed(2)}</span>
+              <span className={styles.metaSub}>Bet {row.bet.toFixed(2)} · {fmtTime(row.time)}</span>
             </div>
 
             <span className={`${styles.multBadge} ${row.cashedOutAt != null ? styles.multWon : styles.multNone}`}>

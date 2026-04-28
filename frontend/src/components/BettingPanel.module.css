@@ -1,26 +1,22 @@
 /* ── Panel shell ── */
 .panel {
-  background: rgba(8, 12, 20, 0.92);
-  backdrop-filter: blur(20px);
-  border-radius: 14px;
-  padding: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(10, 14, 23, 0.85);
+  backdrop-filter: blur(16px);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow:
-    0 32px 56px -12px rgba(0, 0, 0, 0.7),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    0 25px 45px -12px rgba(0, 0, 0, 0.6),
+    inset 0 1px 1px rgba(255, 255, 255, 0.04);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  overflow: hidden;
 }
 
 /* ── Tab bar ── */
 .tabBar {
   display: flex;
-  gap: 4px;
-  background: rgba(0, 0, 0, 0.4);
-  border-radius: 10px;
-  padding: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.18);
 }
 
 .tab {
@@ -29,178 +25,207 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 9px 6px;
-  border-radius: 7px;
+  padding: 12px 6px 13px;
   border: none;
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 2px solid transparent;
   background: transparent;
-  color: #374151;
-  font-size: 11px;
+  color: #4b5563;
+  font-size: 10px;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 1.4px;
+  letter-spacing: 1.5px;
   cursor: pointer;
-  transition: all 0.18s;
-  position: relative;
+  transition: color 0.15s, border-bottom-color 0.15s, background 0.15s;
+  margin-bottom: -1px;
 }
 
-.tab:hover { color: #6b7280; }
+.tab:last-child { border-right: none; }
+.tab:hover { color: #9ca3af; }
 
 .tabActive {
-  background: rgba(var(--tab-rgb), 0.12);
   color: var(--tab-color);
-  box-shadow:
-    inset 0 0 0 1px rgba(var(--tab-rgb), 0.3),
-    0 0 16px rgba(var(--tab-rgb), 0.08);
+  border-bottom-color: var(--tab-color);
+  background: rgba(var(--tab-rgb), 0.04);
 }
 
 .tabDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 5px;
   flex-shrink: 0;
-  animation: dotPulse 1.2s ease-in-out infinite;
+  animation: dotPulse 1.3s ease-in-out infinite;
 }
 
-/* ── Slot ── */
+/* ── Slot content ── */
 .slot {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  padding: 16px 14px 14px;
 }
 
 /* ── Section ── */
 .section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding-bottom: 12px;
+  gap: 9px;
+  padding: 13px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+.section:first-child { padding-top: 0; }
 .section:last-child { border-bottom: none; padding-bottom: 0; }
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
 
 .label {
   color: #4b5563;
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 1.4px;
+  letter-spacing: 1.5px;
 }
 
-.toggleRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-/* ── Inputs ── */
-.inputRow {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-
-.inputWrap {
-  flex: 1;
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.inputSuffix {
-  position: absolute;
-  right: 11px;
-  color: #4b5563;
-  font-size: 13px;
+.balanceHint {
+  color: var(--text-muted);
+  font-size: 10px;
   font-weight: 600;
-  pointer-events: none;
+  letter-spacing: 0.3px;
 }
 
-.input {
-  width: 100%;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 8px;
-  padding: 10px 12px;
-  color: var(--text-primary);
-  font-size: 15px;
-  font-weight: 700;
-  transition: border-color 0.18s, box-shadow 0.18s;
-  outline: none;
+/* ── Bet amount row ── */
+.amountRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
-
-.input:focus {
-  border-color: rgba(var(--accent-rgb), 0.5);
-  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.08);
-}
-
-.input:disabled { opacity: 0.3; cursor: not-allowed; }
-
-/* Hide number input spinners */
-.input::-webkit-inner-spin-button,
-.input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-.input[type=number] { -moz-appearance: textfield; }
 
 .stepBtn {
   flex-shrink: 0;
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
+  border-radius: 5px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 8px;
-  color: #9ca3af;
+  border: 1px solid var(--border);
+  color: #4b5563;
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 300;
   line-height: 1;
   cursor: pointer;
   transition: all 0.14s;
   user-select: none;
 }
 
-.stepBtn:hover {
-  background: rgba(var(--accent-rgb), 0.12);
-  border-color: rgba(var(--accent-rgb), 0.35);
+.stepBtn:hover:not(:disabled) {
+  background: rgba(var(--accent-rgb), 0.1);
+  border-color: rgba(var(--accent-rgb), 0.4);
   color: var(--accent);
 }
 
-.stepBtn:active { transform: scale(0.9); }
+.stepBtn:active:not(:disabled) { transform: scale(0.88); }
+.stepBtn:disabled { opacity: 0.2; cursor: not-allowed; }
 
+.amountInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 28px;
+  font-weight: 800;
+  text-align: center;
+  outline: none;
+  padding: 0;
+  letter-spacing: -0.5px;
+  min-width: 0;
+}
+
+.amountInput:disabled { opacity: 0.25; cursor: not-allowed; }
+
+/* ── Adj buttons ── */
 .adjRow {
   display: flex;
-  gap: 5px;
+  gap: 4px;
 }
 
 .adjBtn {
   flex: 1;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 5px;
   color: #6b7280;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  padding: 7px 4px;
+  padding: 6px 4px;
   cursor: pointer;
   transition: all 0.14s;
   letter-spacing: 0.3px;
 }
 
 .adjBtn:hover:not(:disabled) {
-  background: rgba(var(--accent-rgb), 0.1);
-  border-color: rgba(var(--accent-rgb), 0.3);
+  background: rgba(var(--accent-rgb), 0.08);
+  border-color: rgba(var(--accent-rgb), 0.35);
   color: var(--accent);
 }
 
+.adjBtn:active:not(:disabled) { transform: scale(0.95); }
 .adjBtn:disabled { opacity: 0.2; cursor: not-allowed; }
+
+/* ── Toggle row ── */
+.toggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ── Target multiplier input ── */
+.inputWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.targetInput {
+  width: 100%;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 9px 34px 9px 12px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 700;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.targetInput:focus {
+  border-color: rgba(var(--accent-rgb), 0.5);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.07);
+}
+
+.targetInput:disabled { opacity: 0.25; cursor: not-allowed; }
+
+.inputSuffix {
+  position: absolute;
+  right: 12px;
+  color: #4b5563;
+  font-size: 13px;
+  font-weight: 700;
+  pointer-events: none;
+}
 
 /* ── Toggle switch ── */
 .toggle {
   position: relative;
   display: inline-block;
-  width: 40px;
-  height: 22px;
+  width: 38px;
+  height: 20px;
   flex-shrink: 0;
 }
 
@@ -210,26 +235,26 @@
   position: absolute;
   cursor: pointer;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 11px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 5px;
   transition: 0.2s;
 }
 
 .toggleSlider::before {
   content: '';
   position: absolute;
-  height: 16px;
-  width: 16px;
+  height: 14px;
+  width: 14px;
   left: 2px;
   bottom: 2px;
-  background: #4b5563;
-  border-radius: 50%;
+  background: #374151;
+  border-radius: 5px;
   transition: 0.2s;
 }
 
 .toggle input:checked + .toggleSlider {
-  background: rgba(var(--accent-rgb), 0.18);
+  background: rgba(var(--accent-rgb), 0.15);
   border-color: rgba(var(--accent-rgb), 0.5);
 }
 
@@ -239,7 +264,7 @@
   box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.6);
 }
 
-.toggle input:disabled + .toggleSlider { opacity: 0.35; cursor: not-allowed; }
+.toggle input:disabled + .toggleSlider { opacity: 0.3; cursor: not-allowed; }
 
 /* ── Auto bet ── */
 .autoBetLimitRow {
@@ -250,201 +275,194 @@
 }
 
 .autoBetLimitInput {
-  width: 72px;
+  width: 64px;
   flex-shrink: 0;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 8px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 6px;
   padding: 7px 10px;
   color: var(--text-primary);
   font-size: 13px;
   font-weight: 700;
   text-align: center;
   outline: none;
-  transition: border-color 0.18s;
+  transition: border-color 0.15s;
 }
 
-.autoBetLimitInput:focus {
-  border-color: rgba(var(--accent-rgb), 0.5);
-}
-
-.autoBetLimitInput::-webkit-inner-spin-button,
-.autoBetLimitInput::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.autoBetLimitInput:focus { border-color: rgba(var(--accent-rgb), 0.5); }
 
 .autoBetStatus {
   display: flex;
   align-items: center;
-  gap: 7px;
-  font-size: 12px;
+  gap: 8px;
+  font-size: 11px;
   color: var(--accent);
   font-weight: 600;
-  padding: 8px 10px;
-  background: rgba(var(--accent-rgb), 0.08);
-  border: 1px solid rgba(var(--accent-rgb), 0.2);
-  border-radius: 8px;
+  padding: 9px 12px;
+  background: rgba(var(--accent-rgb), 0.06);
+  border: 1px solid rgba(var(--accent-rgb), 0.18);
+  border-radius: 6px;
+  letter-spacing: 0.3px;
 }
 
 .autoBetDot {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--accent);
   flex-shrink: 0;
-  animation: dotPulse 1.2s ease-in-out infinite;
+  animation: dotPulse 1.3s ease-in-out infinite;
 }
 
 .autoBetCount {
   margin-left: auto;
-  color: #6b7280;
-  font-weight: 500;
+  color: rgba(var(--accent-rgb), 0.5);
+  font-size: 10px;
+  font-weight: 700;
 }
 
 /* ── Action area ── */
 .actionArea {
+  padding-top: 13px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 4px;
+  gap: 6px;
 }
 
-/* ── Action buttons (base) ── */
+/* ── Base action button ── */
 .actionBtn {
   width: 100%;
-  padding: 14px;
-  border-radius: 10px;
-  font-size: 14px;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 12px;
   font-weight: 800;
-  letter-spacing: 0.5px;
+  letter-spacing: 1.5px;
   cursor: pointer;
-  transition: all 0.16s;
+  transition: all 0.15s;
   border: none;
   text-transform: uppercase;
 }
 
-/* Place Bet — solid accent fill */
+/* Place Bet */
 .placeBetBtn {
-  background: linear-gradient(135deg,
-    rgba(var(--accent-rgb), 0.85),
-    rgba(var(--accent-rgb), 0.65));
-  color: #fff;
-  border: 1px solid rgba(var(--accent-rgb), 0.4);
-  box-shadow:
-    0 4px 20px rgba(var(--accent-rgb), 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  padding: 16px;
-  font-size: 15px;
+  background: rgba(var(--accent-rgb), 0.08);
+  border: 1px solid rgba(var(--accent-rgb), 0.35);
+  color: var(--accent);
+  padding: 14px 12px;
+  font-size: 13px;
+  letter-spacing: 2px;
 }
 
 .placeBetBtn:hover {
-  background: linear-gradient(135deg,
-    rgba(var(--accent-rgb), 1),
-    rgba(var(--accent-rgb), 0.8));
-  box-shadow:
-    0 6px 28px rgba(var(--accent-rgb), 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  transform: translateY(-1px);
+  background: rgba(var(--accent-rgb), 0.15);
+  border-color: rgba(var(--accent-rgb), 0.6);
+  box-shadow: 0 0 14px rgba(var(--accent-rgb), 0.2);
 }
 
-.placeBetBtn:active { transform: translateY(0); }
+.placeBetBtn:active { opacity: 0.85; }
 
-/* Cash Out — vivid orange/red pulse */
+/* Cash Out */
 .cashoutBtn {
-  background: linear-gradient(135deg, #f97316, #dc2626);
-  color: #fff;
-  border: 1px solid rgba(249, 115, 22, 0.4);
-  box-shadow: 0 4px 20px rgba(220, 38, 38, 0.35);
+  background: rgba(249, 115, 22, 0.08);
+  border: 1px solid rgba(249, 115, 22, 0.35);
+  color: #f97316;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 12px;
-  animation: cashoutPulse 0.85s ease-in-out infinite;
+  gap: 1px;
+  padding: 10px 12px;
+  animation: cashoutPulse 0.95s ease-in-out infinite;
 }
 
 .cashoutBtn:hover {
-  box-shadow: 0 6px 28px rgba(220, 38, 38, 0.5);
-  transform: translateY(-1px);
+  background: rgba(249, 115, 22, 0.15);
+  border-color: rgba(249, 115, 22, 0.6);
+  box-shadow: 0 0 14px rgba(249, 115, 22, 0.2);
   animation: none;
-  filter: brightness(1.1);
 }
 
-.cashoutBtn:active { transform: translateY(0); }
+.cashoutBtn:active { opacity: 0.85; }
 
 @keyframes cashoutPulse {
-  0%, 100% { box-shadow: 0 4px 20px rgba(220, 38, 38, 0.35); }
-  50%       { box-shadow: 0 6px 28px rgba(220, 38, 38, 0.55); }
+  0%, 100% { border-color: rgba(249, 115, 22, 0.35); box-shadow: none; }
+  50%       { border-color: rgba(249, 115, 22, 0.6);  box-shadow: 0 0 12px rgba(249, 115, 22, 0.18); }
 }
 
-.cashoutLabel  { font-size: 11px; opacity: 0.8; font-weight: 600; letter-spacing: 1.5px; }
-.cashoutAmount { font-size: 19px; font-weight: 900; }
+.cashoutLabel  { font-size: 9px; opacity: 0.65; font-weight: 700; letter-spacing: 2.5px; }
+.cashoutAmount { font-size: 19px; font-weight: 900; letter-spacing: -0.3px; }
 
 /* Bet Next Round */
 .nextRoundBtn {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #6b7280;
-  padding: 12px;
-  font-size: 12px;
+  background: rgba(var(--accent-rgb), 0.04);
+  border: 1px solid rgba(var(--accent-rgb), 0.2);
+  color: var(--accent);
+  opacity: 0.6;
+  padding: 10px 12px;
+  font-size: 10px;
+  letter-spacing: 2px;
 }
 
 .nextRoundBtn:hover {
   background: rgba(var(--accent-rgb), 0.08);
-  border-color: rgba(var(--accent-rgb), 0.3);
-  color: var(--accent);
+  border-color: rgba(var(--accent-rgb), 0.4);
+  box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.12);
+  opacity: 1;
 }
 
 /* Auto bet buttons */
 .autoBetStartBtn {
-  background: rgba(139, 92, 246, 0.1);
-  border: 1px solid rgba(139, 92, 246, 0.3);
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.35);
   color: #a78bfa;
-  font-size: 12px;
-  padding: 10px;
+  font-size: 10px;
+  padding: 10px 12px;
+  letter-spacing: 1.8px;
 }
 
 .autoBetStartBtn:hover {
-  background: rgba(139, 92, 246, 0.18);
-  border-color: rgba(139, 92, 246, 0.55);
-  box-shadow: 0 0 16px rgba(139, 92, 246, 0.2);
+  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(139, 92, 246, 0.6);
+  box-shadow: 0 0 14px rgba(139, 92, 246, 0.18);
 }
 
 .autoBetStopBtn {
   background: rgba(239, 68, 68, 0.08);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  border: 1px solid rgba(239, 68, 68, 0.35);
   color: #f87171;
-  font-size: 12px;
-  padding: 10px;
+  font-size: 10px;
+  padding: 10px 12px;
+  letter-spacing: 1.8px;
 }
 
 .autoBetStopBtn:hover {
-  background: rgba(239, 68, 68, 0.16);
-  border-color: rgba(239, 68, 68, 0.55);
-  box-shadow: 0 0 16px rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.6);
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.18);
 }
 
 /* ── Status badges ── */
 .betPlacedBadge {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 12px;
+  gap: 9px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--accent);
-  padding: 12px 14px;
-  background: rgba(var(--accent-rgb), 0.07);
-  border: 1px solid rgba(var(--accent-rgb), 0.2);
-  border-radius: 10px;
+  padding: 11px 13px;
+  background: rgba(var(--accent-rgb), 0.06);
+  border: 1px solid rgba(var(--accent-rgb), 0.18);
+  border-radius: 6px;
+  letter-spacing: 0.3px;
 }
 
 .betPlacedDot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 5px;
   background: var(--accent);
   flex-shrink: 0;
-  box-shadow: 0 0 6px var(--accent);
-  animation: dotPulse 1.2s ease-in-out infinite;
+  box-shadow: 0 0 7px var(--accent);
+  animation: dotPulse 1.4s ease-in-out infinite;
 }
 
 .nextRoundQueued {
@@ -452,13 +470,13 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  font-size: 12px;
+  font-size: 11px;
   color: #8b5cf6;
   font-weight: 600;
-  padding: 11px 14px;
-  background: rgba(139, 92, 246, 0.07);
-  border: 1px solid rgba(139, 92, 246, 0.22);
-  border-radius: 10px;
+  padding: 10px 13px;
+  background: rgba(139, 92, 246, 0.05);
+  border: 1px solid rgba(139, 92, 246, 0.18);
+  border-radius: 6px;
 }
 
 .nextRoundQueuedLeft {
@@ -468,58 +486,61 @@
 }
 
 .nextRoundDot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 5px;
   background: #8b5cf6;
   flex-shrink: 0;
-  animation: dotPulse 1.2s ease-in-out infinite;
+  animation: dotPulse 1.4s ease-in-out infinite;
 }
 
 .nextRoundCancel {
   background: transparent;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  border: 1px solid rgba(239, 68, 68, 0.22);
   border-radius: 5px;
   color: #f87171;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 3px 8px;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 4px 10px;
   cursor: pointer;
   transition: all 0.14s;
   flex-shrink: 0;
+  letter-spacing: 1px;
+  text-transform: uppercase;
 }
 
 .nextRoundCancel:hover {
-  background: rgba(239, 68, 68, 0.12);
-  border-color: rgba(239, 68, 68, 0.55);
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.45);
 }
 
 /* ── Cashed out result ── */
 .cashedOutInfo {
-  background: rgba(34, 197, 94, 0.07);
-  border: 1px solid rgba(34, 197, 94, 0.2);
-  border-radius: 10px;
-  padding: 14px;
+  background: rgba(34, 197, 94, 0.06);
+  border: 1px solid rgba(34, 197, 94, 0.18);
+  border-radius: 6px;
+  padding: 13px;
   text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
 }
 
-.cashedOutLabel { color: #4b5563; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
-.cashedOutMult  { color: #22c55e; font-size: 26px; font-weight: 900; line-height: 1.1; }
-.cashedOutWin   { color: #4ade80; font-size: 13px; font-weight: 700; }
+.cashedOutLabel { color: #4b5563; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; }
+.cashedOutMult  { color: #22c55e; font-size: 28px; font-weight: 900; line-height: 1.1; letter-spacing: -0.5px; }
+.cashedOutWin   { color: #4ade80; font-size: 12px; font-weight: 700; }
 
 /* ── Animations ── */
 @keyframes dotPulse {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.4; transform: scale(0.8); }
+  50%       { opacity: 0.3; transform: scale(0.7); }
 }
 
 /* ── Responsive ── */
 @media (max-width: 700px) {
-  .panel { padding: 12px; gap: 12px; }
-  .tab   { font-size: 10px; padding: 8px 4px; }
-  .actionBtn { font-size: 13px; }
-  .placeBetBtn { font-size: 14px; padding: 14px; }
+  .slot { padding: 13px 11px 11px; }
+  .tab { font-size: 9px; padding: 10px 4px 11px; letter-spacing: 1.2px; }
+  .actionBtn { font-size: 11px; }
+  .placeBetBtn { font-size: 12px; padding: 13px; }
+  .amountInput { font-size: 24px; }
 }

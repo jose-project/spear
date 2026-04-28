@@ -175,6 +175,7 @@ export function useCrashGame() {
                 profit: b.profit != null ? Number(b.profit) : null,
                 won: b.won,
                 pending: b.cashedOutAt == null && !b.won && b.roundState !== 'Crashed',
+                time: b.placedAt ? new Date(b.placedAt).getTime() : Date.now(),
               }))
             return [...seeded, ...prev].slice(0, 30)
           })
@@ -298,6 +299,7 @@ export function useCrashGame() {
           cashedOutAt: b.cashedOutAt != null ? Number(b.cashedOutAt) : null,
           profit: Number(b.profit),
           won: b.won,
+          time: b.placedAt ? new Date(b.placedAt).getTime() : Date.now(),
         }))
         setBetHistory(items)
       })
@@ -345,6 +347,7 @@ export function useCrashGame() {
           profit: b.profit != null ? Number(b.profit) : null,
           won: b.won,
           pending: b.cashedOutAt == null && !b.won && b.roundState !== 'Crashed',
+          time: b.placedAt ? new Date(b.placedAt).getTime() : Date.now(),
         })).slice(0, 30))
       })
       .catch(() => setLiveBets([]))
@@ -522,9 +525,9 @@ export function useCrashGame() {
           const win = parseFloat((pendingBetAmountRef.current * mNum).toFixed(2))
           setLastWin(win)
           updateDemoBalanceRef.current(prev => prev + win)
-          const autoCo1 = { id: currentBetIdRef.current, roundNumber: currentRoundNumberRef.current, bet: pendingBetAmountRef.current, crashPoint: null, cashedOutAt: mNum, profit: parseFloat((pendingBetAmountRef.current * (mNum - 1)).toFixed(2)), won: true }
+          const autoCo1 = { id: currentBetIdRef.current, roundNumber: currentRoundNumberRef.current, bet: pendingBetAmountRef.current, crashPoint: null, cashedOutAt: mNum, profit: parseFloat((pendingBetAmountRef.current * (mNum - 1)).toFixed(2)), won: true, time: Date.now() }
           setBetHistory(prev => [autoCo1, ...prev].slice(0, 30))
-          setLiveBets(prev => [{ id: autoCo1.id, username: 'Demo', bet: autoCo1.bet, cashedOutAt: mNum, profit: autoCo1.profit, won: true }, ...prev].slice(0, 30))
+          setLiveBets(prev => [{ id: autoCo1.id, username: 'Demo', bet: autoCo1.bet, cashedOutAt: mNum, profit: autoCo1.profit, won: true, time: Date.now() }, ...prev].slice(0, 30))
         }
       }
 
@@ -538,9 +541,9 @@ export function useCrashGame() {
           const win2 = parseFloat((pendingBet2AmountRef.current * mNum).toFixed(2))
           setLastWin2(win2)
           updateDemoBalanceRef.current(prev => prev + win2)
-          const autoCo2 = { id: currentBet2IdRef.current, roundNumber: currentRoundNumberRef.current, bet: pendingBet2AmountRef.current, crashPoint: null, cashedOutAt: mNum, profit: parseFloat((pendingBet2AmountRef.current * (mNum - 1)).toFixed(2)), won: true }
+          const autoCo2 = { id: currentBet2IdRef.current, roundNumber: currentRoundNumberRef.current, bet: pendingBet2AmountRef.current, crashPoint: null, cashedOutAt: mNum, profit: parseFloat((pendingBet2AmountRef.current * (mNum - 1)).toFixed(2)), won: true, time: Date.now() }
           setBetHistory(prev => [autoCo2, ...prev].slice(0, 30))
-          setLiveBets(prev => [{ id: autoCo2.id, username: 'Demo', bet: autoCo2.bet, cashedOutAt: mNum, profit: autoCo2.profit, won: true }, ...prev].slice(0, 30))
+          setLiveBets(prev => [{ id: autoCo2.id, username: 'Demo', bet: autoCo2.bet, cashedOutAt: mNum, profit: autoCo2.profit, won: true, time: Date.now() }, ...prev].slice(0, 30))
         }
       }
 
@@ -554,9 +557,9 @@ export function useCrashGame() {
           const win3 = parseFloat((pendingBet3AmountRef.current * mNum).toFixed(2))
           setLastWin3(win3)
           updateDemoBalanceRef.current(prev => prev + win3)
-          const autoCo3 = { id: currentBet3IdRef.current, roundNumber: currentRoundNumberRef.current, bet: pendingBet3AmountRef.current, crashPoint: null, cashedOutAt: mNum, profit: parseFloat((pendingBet3AmountRef.current * (mNum - 1)).toFixed(2)), won: true }
+          const autoCo3 = { id: currentBet3IdRef.current, roundNumber: currentRoundNumberRef.current, bet: pendingBet3AmountRef.current, crashPoint: null, cashedOutAt: mNum, profit: parseFloat((pendingBet3AmountRef.current * (mNum - 1)).toFixed(2)), won: true, time: Date.now() }
           setBetHistory(prev => [autoCo3, ...prev].slice(0, 30))
-          setLiveBets(prev => [{ id: autoCo3.id, username: 'Demo', bet: autoCo3.bet, cashedOutAt: mNum, profit: autoCo3.profit, won: true }, ...prev].slice(0, 30))
+          setLiveBets(prev => [{ id: autoCo3.id, username: 'Demo', bet: autoCo3.bet, cashedOutAt: mNum, profit: autoCo3.profit, won: true, time: Date.now() }, ...prev].slice(0, 30))
         }
       }
     })
@@ -584,6 +587,7 @@ export function useCrashGame() {
                 cashedOutAt: null,
                 profit: -pendingBetAmountRef.current,
                 won: false,
+                time: Date.now(),
               },
               ...result,
             ]
@@ -606,6 +610,7 @@ export function useCrashGame() {
                 cashedOutAt: null,
                 profit: -pendingBet2AmountRef.current,
                 won: false,
+                time: Date.now(),
               },
               ...result,
             ]
@@ -628,6 +633,7 @@ export function useCrashGame() {
                 cashedOutAt: null,
                 profit: -pendingBet3AmountRef.current,
                 won: false,
+                time: Date.now(),
               },
               ...result,
             ]
@@ -651,17 +657,17 @@ export function useCrashGame() {
           // Only add an explicit entry if the bet wasn't already covered by a pending entry (i.e. demo mode)
           if (betPlacedRef.current && !cashedOutRef.current) {
             if (!result.some(e => e.id === currentBetIdRef.current)) {
-              result = [{ id: `lost-live-${Date.now()}`, username: liveUsername, bet: pendingBetAmountRef.current, cashedOutAt: null, profit: -pendingBetAmountRef.current, won: false, pending: false }, ...result]
+              result = [{ id: `lost-live-${Date.now()}`, username: liveUsername, bet: pendingBetAmountRef.current, cashedOutAt: null, profit: -pendingBetAmountRef.current, won: false, pending: false, time: Date.now() }, ...result]
             }
           }
           if (bet2PlacedRef.current && !cashedOut2Ref.current) {
             if (!result.some(e => e.id === currentBet2IdRef.current)) {
-              result = [{ id: `lost2-live-${Date.now()}`, username: liveUsername, bet: pendingBet2AmountRef.current, cashedOutAt: null, profit: -pendingBet2AmountRef.current, won: false, pending: false }, ...result]
+              result = [{ id: `lost2-live-${Date.now()}`, username: liveUsername, bet: pendingBet2AmountRef.current, cashedOutAt: null, profit: -pendingBet2AmountRef.current, won: false, pending: false, time: Date.now() }, ...result]
             }
           }
           if (bet3PlacedRef.current && !cashedOut3Ref.current) {
             if (!result.some(e => e.id === currentBet3IdRef.current)) {
-              result = [{ id: `lost3-live-${Date.now()}`, username: liveUsername, bet: pendingBet3AmountRef.current, cashedOutAt: null, profit: -pendingBet3AmountRef.current, won: false, pending: false }, ...result]
+              result = [{ id: `lost3-live-${Date.now()}`, username: liveUsername, bet: pendingBet3AmountRef.current, cashedOutAt: null, profit: -pendingBet3AmountRef.current, won: false, pending: false, time: Date.now() }, ...result]
             }
           }
         }
@@ -680,7 +686,7 @@ export function useCrashGame() {
       const safeAmount = Number(amount) || 0
       setLiveBets(prev => {
         if (prev.some(e => e.id === betId)) return prev
-        return [{ id: betId, username, bet: safeAmount, cashedOutAt: null, profit: null, won: null, pending: true }, ...prev].slice(0, 30)
+        return [{ id: betId, username, bet: safeAmount, cashedOutAt: null, profit: null, won: null, pending: true, time: Date.now() }, ...prev].slice(0, 30)
       })
     })
 
@@ -691,7 +697,7 @@ export function useCrashGame() {
       const winAmount  = safeAmount + safeProfit
 
       setLiveBets(prev => {
-        const updated = { id: betId, username, bet: safeAmount, cashedOutAt: safeMult, profit: safeProfit, won: true, pending: false }
+        const updated = { id: betId, username, bet: safeAmount, cashedOutAt: safeMult, profit: safeProfit, won: true, pending: false, time: Date.now() }
         if (prev.some(e => e.id === betId)) {
           return prev.map(e => e.id === betId ? updated : e)
         }
@@ -715,6 +721,7 @@ export function useCrashGame() {
             cashedOutAt: safeMult,
             profit: safeProfit,
             won: true,
+            time: Date.now(),
           },
           ...prev,
         ].slice(0, 30))
@@ -733,6 +740,7 @@ export function useCrashGame() {
             cashedOutAt: safeMult,
             profit: safeProfit,
             won: true,
+            time: Date.now(),
           },
           ...prev,
         ].slice(0, 30))
@@ -751,6 +759,7 @@ export function useCrashGame() {
             cashedOutAt: safeMult,
             profit: safeProfit,
             won: true,
+            time: Date.now(),
           },
           ...prev,
         ].slice(0, 30))
@@ -908,9 +917,10 @@ export function useCrashGame() {
         cashedOutAt: mNum,
         profit: parseFloat((pendingBetAmountRef.current * (mNum - 1)).toFixed(2)),
         won: true,
+        time: Date.now(),
       }
       setBetHistory(prev => [demoEntry, ...prev].slice(0, 30))
-      setLiveBets(prev => [{ id: demoEntry.id, username: 'Demo', bet: demoEntry.bet, cashedOutAt: mNum, profit: demoEntry.profit, won: true }, ...prev].slice(0, 30))
+      setLiveBets(prev => [{ id: demoEntry.id, username: 'Demo', bet: demoEntry.bet, cashedOutAt: mNum, profit: demoEntry.profit, won: true, time: demoEntry.time }, ...prev].slice(0, 30))
       return
     }
 
@@ -934,10 +944,11 @@ export function useCrashGame() {
         cashedOutAt: cashMult,
         profit: Number(result.profit),
         won: true,
+        time: result.placedAt ? new Date(result.placedAt).getTime() : Date.now(),
       }
       setBetHistory(prev => [entry, ...prev].slice(0, 30))
       setLiveBets(prev => {
-        const liveEntry = { id: entry.id, username: userRef.current?.username ?? '', bet: entry.bet, cashedOutAt: cashMult, profit: entry.profit, won: true, pending: false }
+        const liveEntry = { id: entry.id, username: userRef.current?.username ?? '', bet: entry.bet, cashedOutAt: cashMult, profit: entry.profit, won: true, pending: false, time: entry.time }
         if (prev.some(e => e.id === entry.id)) return prev.map(e => e.id === entry.id ? liveEntry : e)
         return [liveEntry, ...prev].slice(0, 30)
       })
@@ -967,9 +978,10 @@ export function useCrashGame() {
         cashedOutAt: mNum,
         profit: parseFloat((pendingBet2AmountRef.current * (mNum - 1)).toFixed(2)),
         won: true,
+        time: Date.now(),
       }
       setBetHistory(prev => [demoEntry2, ...prev].slice(0, 30))
-      setLiveBets(prev => [{ id: demoEntry2.id, username: 'Demo', bet: demoEntry2.bet, cashedOutAt: mNum, profit: demoEntry2.profit, won: true }, ...prev].slice(0, 30))
+      setLiveBets(prev => [{ id: demoEntry2.id, username: 'Demo', bet: demoEntry2.bet, cashedOutAt: mNum, profit: demoEntry2.profit, won: true, time: demoEntry2.time }, ...prev].slice(0, 30))
       return
     }
 
@@ -993,10 +1005,11 @@ export function useCrashGame() {
         cashedOutAt: cashMult,
         profit: Number(result.profit),
         won: true,
+        time: result.placedAt ? new Date(result.placedAt).getTime() : Date.now(),
       }
       setBetHistory(prev => [entry2, ...prev].slice(0, 30))
       setLiveBets(prev => {
-        const liveEntry2 = { id: entry2.id, username: userRef.current?.username ?? '', bet: entry2.bet, cashedOutAt: cashMult, profit: entry2.profit, won: true, pending: false }
+        const liveEntry2 = { id: entry2.id, username: userRef.current?.username ?? '', bet: entry2.bet, cashedOutAt: cashMult, profit: entry2.profit, won: true, pending: false, time: entry2.time }
         if (prev.some(e => e.id === entry2.id)) return prev.map(e => e.id === entry2.id ? liveEntry2 : e)
         return [liveEntry2, ...prev].slice(0, 30)
       })
@@ -1026,9 +1039,10 @@ export function useCrashGame() {
         cashedOutAt: mNum,
         profit: parseFloat((pendingBet3AmountRef.current * (mNum - 1)).toFixed(2)),
         won: true,
+        time: Date.now(),
       }
       setBetHistory(prev => [demoEntry3, ...prev].slice(0, 30))
-      setLiveBets(prev => [{ id: demoEntry3.id, username: 'Demo', bet: demoEntry3.bet, cashedOutAt: mNum, profit: demoEntry3.profit, won: true }, ...prev].slice(0, 30))
+      setLiveBets(prev => [{ id: demoEntry3.id, username: 'Demo', bet: demoEntry3.bet, cashedOutAt: mNum, profit: demoEntry3.profit, won: true, time: demoEntry3.time }, ...prev].slice(0, 30))
       return
     }
 
@@ -1052,10 +1066,11 @@ export function useCrashGame() {
         cashedOutAt: cashMult,
         profit: Number(result.profit),
         won: true,
+        time: result.placedAt ? new Date(result.placedAt).getTime() : Date.now(),
       }
       setBetHistory(prev => [entry3, ...prev].slice(0, 30))
       setLiveBets(prev => {
-        const liveEntry3 = { id: entry3.id, username: userRef.current?.username ?? '', bet: entry3.bet, cashedOutAt: cashMult, profit: entry3.profit, won: true, pending: false }
+        const liveEntry3 = { id: entry3.id, username: userRef.current?.username ?? '', bet: entry3.bet, cashedOutAt: cashMult, profit: entry3.profit, won: true, pending: false, time: entry3.time }
         if (prev.some(e => e.id === entry3.id)) return prev.map(e => e.id === entry3.id ? liveEntry3 : e)
         return [liveEntry3, ...prev].slice(0, 30)
       })

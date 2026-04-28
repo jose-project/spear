@@ -14,7 +14,7 @@ import styles from './CrashGame.module.css'
 export default function CrashGame() {
   const game = useCrashGame()
   const { user, logout, demoMode, demoBalance, enterDemo, updateDemoBalance } = useAuth()
-  const { muted, toggleMute, playBetPlaced, playRoundStart, playCashout, playCrash } = useSounds()
+  const { muted, toggleMute, startBgMusic, stopBgMusic, playBetPlaced, playRoundStart, playRingPass, playCashout, playCrash } = useSounds()
   const [showAuth, setShowAuth] = useState(false)
   const [activeTab, setActiveTab] = useState('my')
 
@@ -25,6 +25,10 @@ export default function CrashGame() {
     error, connected,
   } = game
 
+  // Stop background music on unmount
+  useEffect(() => () => stopBgMusic(), []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Phase change sounds
   const prevPhaseRef = useRef(null)
   useEffect(() => {
     const prev = prevPhaseRef.current
@@ -34,12 +38,14 @@ export default function CrashGame() {
     else if (phase === 'crashed') playCrash()
   }, [phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Bet placed sound
   const prevBetPlacedRef = useRef(betPlaced)
   useEffect(() => {
     if (!prevBetPlacedRef.current && betPlaced) playBetPlaced()
     prevBetPlacedRef.current = betPlaced
   }, [betPlaced]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Cashout sounds
   const prevCashedOutRef = useRef(cashedOut)
   useEffect(() => {
     if (!prevCashedOutRef.current && cashedOut) playCashout()
@@ -57,6 +63,20 @@ export default function CrashGame() {
     if (!prevCashedOut3Ref.current && cashedOut3) playCashout()
     prevCashedOut3Ref.current = cashedOut3
   }, [cashedOut3]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Ring-pass sound at multiplier milestones
+  const RING_THRESHOLDS = [2, 5, 10, 25, 100]
+  const passedThresholdsRef = useRef(new Set())
+  useEffect(() => {
+    if (phase !== 'running') { passedThresholdsRef.current = new Set(); return }
+    for (const t of RING_THRESHOLDS) {
+      if (multiplier >= t && !passedThresholdsRef.current.has(t)) {
+        passedThresholdsRef.current.add(t)
+        playRingPass(t)
+        break
+      }
+    }
+  }, [multiplier, phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
 
   function multClass() {

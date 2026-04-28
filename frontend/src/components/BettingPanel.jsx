@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import styles from './BettingPanel.module.css'
 
 const SLOTS = [
@@ -18,12 +18,13 @@ function BetSlot({
   placeBet, cashOut,
   nextRoundBet, setNextRoundBet,
 }) {
-  const canBet     = phase === 'waiting' && !betPlaced
+  const canBet     = phase === 'waiting' && !betPlaced && !autoBet
   const canCashOut = phase === 'running' && betPlaced && !cashedOut
   const running    = phase === 'running'
   const crashed    = phase === 'crashed'
 
-  const [autoBetOpen, setAutoBetOpen] = useState(false)
+  const [autoBetOpen, setAutoBetOpen] = useState(autoBet)
+  useEffect(() => { if (autoBet) setAutoBetOpen(true) }, [autoBet])
 
   function handleBetInput(e) {
     const val = parseFloat(e.target.value)
@@ -54,22 +55,23 @@ function BetSlot({
 
       {/* Bet Amount */}
       <div className={styles.section}>
-        <label className={styles.label}>Bet Amount</label>
-        <div className={styles.inputRow}>
-          <button className={styles.stepBtn} onClick={() => stepBet(-1)}>−</button>
-          <div className={styles.inputWrap}>
-            <input
-              type="number"
-              className={styles.input}
-              value={betAmount}
-              onChange={handleBetInput}
-              min={1}
-              max={balance}
-              step={1}
-              disabled={betPlaced}
-            />
-          </div>
-          <button className={styles.stepBtn} onClick={() => stepBet(1)}>+</button>
+        <div className={styles.sectionHeader}>
+          <span className={styles.label}>Bet Amount</span>
+          <span className={styles.balanceHint}>Bal: {balance?.toFixed(2)}</span>
+        </div>
+        <div className={styles.amountRow}>
+          <button className={styles.stepBtn} onClick={() => stepBet(-1)} disabled={betPlaced}>−</button>
+          <input
+            type="number"
+            className={styles.amountInput}
+            value={betAmount}
+            onChange={handleBetInput}
+            min={1}
+            max={balance}
+            step={1}
+            disabled={betPlaced}
+          />
+          <button className={styles.stepBtn} onClick={() => stepBet(1)} disabled={betPlaced}>+</button>
         </div>
         <div className={styles.adjRow}>
           <button className={styles.adjBtn} onClick={() => adjustBet('half')}   disabled={betPlaced}>½</button>
@@ -96,7 +98,7 @@ function BetSlot({
           <div className={styles.inputWrap}>
             <input
               type="number"
-              className={styles.input}
+              className={styles.targetInput}
               placeholder="1.50"
               value={autoCashout}
               onChange={e => setAutoCashout(e.target.value)}
@@ -203,7 +205,7 @@ function BetSlot({
           </div>
         )}
 
-        {(running || crashed) && !betPlaced && (
+        {(running || crashed) && !betPlaced && !autoBet && (
           !nextRoundBet ? (
             <button
               className={`${styles.actionBtn} ${styles.nextRoundBtn}`}
@@ -217,7 +219,7 @@ function BetSlot({
                 <span className={styles.nextRoundDot} />
                 <span>Queued for next round</span>
               </div>
-              <button className={styles.nextRoundCancel} onClick={() => setNextRoundBet(false)}>✕</button>
+              <button className={styles.nextRoundCancel} onClick={() => setNextRoundBet(false)}>Cancel</button>
             </div>
           )
         )}
@@ -298,10 +300,10 @@ export default function BettingPanel({
             style={activeSlot === i ? { '--tab-color': s.color, '--tab-rgb': s.rgb } : {}}
             onClick={() => setActiveSlot(i)}
           >
-            {s.label}
             {activePlaced[i] && (
               <span className={styles.tabDot} style={{ background: s.color }} />
             )}
+            {s.label}
           </button>
         ))}
       </div>

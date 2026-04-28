@@ -352,6 +352,25 @@ function emitSparks(particles, x, y, count, speed) {
       life, maxLife: life, size: 1.5 + Math.random() * 2.5, gold: Math.random() > 0.3 })
   }
 }
+// Burst of sparks + low dust from spear-tip impact on ground
+function emitGroundImpact(particles, x, y) {
+  for (let i = 0; i < 32; i++) {
+    const a = Math.PI + (Math.random() - 0.5) * Math.PI * 1.2  // wide upward cone
+    const v = 80 + Math.random() * 220
+    const life = 0.3 + Math.random() * 0.6
+    particles.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v,
+      life, maxLife: life, size: 1.5 + Math.random() * 3.5, gold: Math.random() > 0.4 })
+  }
+  for (let i = 0; i < 12; i++) {
+    const side = i % 2 === 0 ? 1 : -1
+    const v = 35 + Math.random() * 70
+    const life = 0.45 + Math.random() * 0.4
+    particles.push({ x, y, vx: side * v * (0.7 + Math.random() * 0.6),
+      vy: -(15 + Math.random() * 35),
+      life, maxLife: life, size: 2.5 + Math.random() * 3, gold: false })
+  }
+}
+
 function updateParticles(particles, dt) {
   const s = dt / 1000
   for (let i = particles.length - 1; i >= 0; i--) {
@@ -1604,6 +1623,27 @@ function drawSpearImage(ctx, img, tipX, tipY, spearLen = SPEAR_LEN) {
   ctx.restore()
 }
 
+// Draw spear image at arbitrary angle (tip-to-tail direction given by spearAngle)
+function drawSpearFall(ctx, img, tipX, tipY, spearAngle, spearLen) {
+  const s  = spearLen / (Math.SQRT2 * 0.85)
+  const R  = spearAngle - SPEAR_IMG_ANGLE
+  const cx = tipX - Math.cos(spearAngle) * spearLen / 2
+  const cy = tipY - Math.sin(spearAngle) * spearLen / 2
+  ctx.save()
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = 'high'
+  ctx.translate(cx, cy)
+  ctx.rotate(R)
+  if (img) {
+    ctx.drawImage(img, -s / 2, -s / 2, s, s)
+  } else {
+    // Fallback: plain shape
+    ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 3; ctx.lineCap = 'round'
+    ctx.beginPath(); ctx.moveTo(-spearLen / 2, 0); ctx.lineTo(spearLen / 2, 0); ctx.stroke()
+  }
+  ctx.restore()
+}
+
 function drawSpearShape(ctx, x1, y1, x2, y2, crashed, mult = 1) {
   const dx = x2 - x1, dy = y2 - y1
   const angle = Math.atan2(dy, dx)
@@ -1713,6 +1753,8 @@ export default function CrashGraph({ phase, multiplier, crashPoint, countdown })
   const hoopRef            = useRef([])
   const hoopSpawnTimerRef  = useRef(0)
   const explosionOrigin    = useRef(null)
+  const crashSpearRef      = useRef(null)
+  const crashImpactFiredRef = useRef(false)
   const spriteRef       = useRef(null)
   const spearImgRef     = useRef(null)
   useEffect(() => {
@@ -1986,14 +2028,18 @@ export default function CrashGraph({ phase, multiplier, crashPoint, countdown })
       const finalM = crashPoint || 1.0
       const maxM   = Math.max(finalM * 1.18, 2.5)
 
-      // Spawn dramatic explosion at spear's last position
-      shockwaveRef.current = []
-      particlesRef.current = []
+      // Capture spear's last tip position for the fall animation
+      crashSpearRef.current = null
+      crashImpactFiredRef.current = false
       if (trailRef.current.length > 0) {
         const last = trailRef.current[trailRef.current.length - 1]
-        explosionOrigin.current = { x: last.x, y: last.y }
-        spawnExplosion(particlesRef.current, shockwaveRef.current, last.x, last.y)
+        crashSpearRef.current = { tipX: last.x, tipY: last.y }
       }
+      particlesRef.current = []
+
+      // Spear falls then sticks at a realistic forward-lean angle (~40° from horizontal)
+      const FALL_DUR    = 0.65
+      const STUCK_ANGLE = Math.PI * 0.22   // ~40° from horizontal — tip forward in ground, tail up-left
 
       const loop = (ts) => {
         tRef.current++
@@ -2002,16 +2048,22 @@ export default function CrashGraph({ phase, multiplier, crashPoint, countdown })
         const { width: w, height: h } = canvas
         const scale   = Math.min(1, Math.max(0.6, h / 320))
         const spriteH = Math.round(SPRITE_DISPLAY_H * scale)
+        const distScaleAtCrash = Math.max(0.60, Math.pow(finalM, -0.07))
+        const spearLen = Math.round(SPEAR_LEN * scale * distScaleAtCrash)
 
         updateParticles(particlesRef.current, dt)
-        updateShockwaves(shockwaveRef.current, dt)
 
-        // Screen shake — quick jolt, decays in 0.3s
+        // Two-phase shake: hard initial crash jolt (0–0.12s) + ground-impact jolt (at FALL_DUR)
         let shakeX = 0, shakeY = 0
-        if (age < 0.3) {
-          const amt = 6 * Math.pow(1 - age / 0.3, 2.5)
-          shakeX = Math.sin(age * 240) * amt
-          shakeY = Math.cos(age * 190) * amt
+        const impactAge = age - FALL_DUR
+        if (age < 0.35) {
+          const amt = 10 * Math.pow(1 - age / 0.35, 2.2)
+          shakeX = Math.sin(age * 310) * amt
+          shakeY = Math.cos(age * 240) * amt
+        } else if (impactAge >= 0 && impactAge < 0.25) {
+          const amt = 7 * Math.pow(1 - impactAge / 0.25, 2.0)
+          shakeX = Math.sin(impactAge * 280) * amt
+          shakeY = Math.cos(impactAge * 220) * amt
         }
 
         const gY   = h - PAD_B
@@ -2024,28 +2076,107 @@ export default function CrashGraph({ phase, multiplier, crashPoint, countdown })
         drawAxes(ctx, w, h, maxM)
         drawGround(ctx, w, h, scrollRef.current)
         drawTrail(ctx, trailRef.current)
+
+        // ── Falling / stuck spear ─────────────────────────────
+        if (crashSpearRef.current) {
+          const { tipX: crashTipX, tipY: crashTipY } = crashSpearRef.current
+          const crashAngle = SPEAR_RELEASE_ANGLE
+
+          // Compute center of spear at crash instant
+          const crashCX = crashTipX - Math.cos(crashAngle) * spearLen / 2
+          const crashCY = crashTipY - Math.sin(crashAngle) * spearLen / 2
+
+          // Final (stuck) center: tip at ground, spear leaning forward at STUCK_ANGLE
+          const stuckTipX = Math.min(crashCX + 55 + Math.cos(STUCK_ANGLE) * spearLen / 2, w - PAD_R - 10)
+          const stuckCX   = stuckTipX - Math.cos(STUCK_ANGLE) * spearLen / 2
+          const stuckCY   = gY - Math.sin(STUCK_ANGLE) * spearLen / 2
+
+          if (age < FALL_DUR) {
+            const t = age / FALL_DUR
+
+            // Center follows a quadratic Bezier: slight upward kick at start (residual momentum),
+            // then arcs down to the stuck position — mimics ballistic center-of-mass path
+            const cpX = crashCX + (stuckCX - crashCX) * 0.28
+            const cpY = crashCY - 22   // initial upward impulse from the throw
+            const cx  = (1-t)*(1-t)*crashCX + 2*(1-t)*t*cpX + t*t*stuckCX
+            const cy  = (1-t)*(1-t)*crashCY + 2*(1-t)*t*cpY + t*t*stuckCY
+
+            // Smoothstep angle: nose rotates clockwise from -30° to +40°
+            const ts    = t*t*(3-2*t)
+            const angle = lerp(crashAngle, STUCK_ANGLE, ts)
+
+            // Tip derived from center + half-length in flight direction
+            drawSpearFall(ctx, spearImgRef.current,
+              cx + Math.cos(angle) * spearLen / 2,
+              cy + Math.sin(angle) * spearLen / 2,
+              angle, spearLen)
+          } else {
+            // Spawn impact burst once the instant the spear hits the ground
+            if (!crashImpactFiredRef.current) {
+              crashImpactFiredRef.current = true
+              emitGroundImpact(particlesRef.current, stuckTipX, gY)
+            }
+
+            // Stuck — small damped wobble like a vibrating javelin
+            const wobbleAge = age - FALL_DUR
+            const wobble    = Math.sin(wobbleAge * 16) * 0.03 * Math.exp(-wobbleAge * 5)
+            drawSpearFall(ctx, spearImgRef.current, stuckTipX, gY, STUCK_ANGLE + wobble, spearLen)
+
+            // Ground impact ring — expands and fades out
+            const impactT = Math.min(1, wobbleAge / 0.4)
+            if (impactT < 1) {
+              ctx.save()
+              ctx.globalAlpha = Math.pow(1 - impactT, 1.4) * 0.7
+              ctx.strokeStyle = 'rgba(200,160,100,1)'
+              ctx.lineWidth   = 2.5
+              ctx.shadowBlur  = 10; ctx.shadowColor = 'rgba(245,158,11,0.6)'
+              ctx.beginPath()
+              ctx.ellipse(stuckTipX, gY, 40 * impactT, 12 * impactT, 0, 0, Math.PI * 2)
+              ctx.stroke()
+              ctx.shadowBlur = 0
+              ctx.restore()
+            }
+          }
+        }
+
+        drawParticles(ctx, particlesRef.current)
         ctx.restore()
 
-        // Brief red flash at impact
-        if (age < 0.25) {
-          const flashA = Math.pow(1 - age / 0.25, 2) * 0.3
-          ctx.fillStyle = `rgba(210,10,10,${flashA.toFixed(3)})`
+        // White flash at crash → fades to red → gone by 0.35s
+        if (age < 0.35) {
+          const t = age / 0.35
+          // White component: sharp peak at t=0, gone by t=0.25
+          const whiteA = age < 0.08 ? (1 - age / 0.08) * 0.6 : 0
+          if (whiteA > 0) {
+            ctx.fillStyle = `rgba(255,255,255,${whiteA.toFixed(3)})`
+            ctx.fillRect(0, 0, w, h)
+          }
+          // Red flash: peaks around t=0.12, fades out
+          const redA = Math.pow(Math.max(0, 1 - Math.abs(t - 0.35) / 0.65), 2.2) * 0.45
+          if (redA > 0.01) {
+            ctx.fillStyle = `rgba(220,10,10,${redA.toFixed(3)})`
+            ctx.fillRect(0, 0, w, h)
+          }
+        }
+
+        // Second flash at ground impact
+        if (impactAge >= 0 && impactAge < 0.18) {
+          const impA = Math.pow(1 - impactAge / 0.18, 2.5) * 0.28
+          ctx.fillStyle = `rgba(230,120,20,${impA.toFixed(3)})`
           ctx.fillRect(0, 0, w, h)
         }
 
-        // Subtle dark vignette around edges
-        const vigA = Math.min(1, age / 0.4) * 0.4
-        const vig = ctx.createRadialGradient(w / 2, h / 2, h * 0.28, w / 2, h / 2, h * 0.9)
+        // Dark red vignette — deepens after crash
+        const vigA = Math.min(1, age / 0.5) * 0.55
+        const vig = ctx.createRadialGradient(w / 2, h / 2, h * 0.22, w / 2, h / 2, h * 0.95)
         vig.addColorStop(0, 'rgba(0,0,0,0)')
-        vig.addColorStop(1, `rgba(60,0,0,${vigA.toFixed(3)})`)
+        vig.addColorStop(1, `rgba(80,0,0,${vigA.toFixed(3)})`)
         ctx.fillStyle = vig
         ctx.fillRect(0, 0, w, h)
 
-        // Explosion effects rendered on top of flash/vignette
+        // Sprite panting (with shake to feel the impact)
         ctx.save()
         ctx.translate(shakeX, shakeY)
-        drawShockwaves(ctx, shockwaveRef.current)
-        drawParticles(ctx, particlesRef.current)
         const pantCycle = SPRITE_PANT_COUNT * 2 - 2
         const pantT     = Math.floor(Date.now() / 83) % pantCycle
         const pantFrame = pantT < SPRITE_PANT_COUNT ? pantT : pantCycle - pantT

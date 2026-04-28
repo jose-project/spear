@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import styles from './AuthModal.module.css'
+import companyLogo from '../assets/company_logo.png'
 
 export default function AuthModal({ onClose }) {
   const { login, register } = useAuth()
@@ -47,7 +48,7 @@ export default function AuthModal({ onClose }) {
         <button className={styles.closeBtn} onClick={onClose}>✕</button>
 
         <div className={styles.modalHeader}>
-          <img src="/src/assets/company_logo.png" alt="Spear" className={styles.modalLogo} />
+          <img src={companyLogo} alt="Spear" className={styles.modalLogo} />
           <span className={styles.modalTitle}>Spear Rush</span>
         </div>
         <p className={styles.modalTagline}>Your account. Your bets.</p>
