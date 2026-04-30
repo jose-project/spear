@@ -38,8 +38,7 @@
               "RelativeToolTip": "Spear.API\\appsettings.json",
               "ViewState": "AgIAAA8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-04-28T09:49:00.945Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-28T09:49:00.945Z"
             },
             {
               "$type": "Document",
@@ -49,7 +48,7 @@
               "RelativeDocumentMoniker": "Spear.API\\Program.cs",
               "ToolTip": "C:\\github\\spear\\backend\\Spear.API\\Program.cs",
               "RelativeToolTip": "Spear.API\\Program.cs",
-              "ViewState": "AgIAAH4AAAAAAAAAAAAAAG4AAAACAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABkAAAAkAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-04-28T09:29:39.93Z",
               "EditorCaption": ""
@@ -63,21 +62,19 @@
               "ToolTip": "C:\\github\\spear\\backend\\Spear.API\\Spear.API.csproj",
               "RelativeToolTip": "Spear.API\\Spear.API.csproj",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2026-04-28T09:03:43.589Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-28T09:03:43.589Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 3,
-              "Title": "Spear.API",
+              "Title": "Spear.API.csproj",
               "DocumentMoniker": "C:\\github\\spear\\backend\\Spear.API\\Spear.API.csproj",
               "RelativeDocumentMoniker": "Spear.API\\Spear.API.csproj",
               "ToolTip": "C:\\github\\spear\\backend\\Spear.API\\Spear.API.csproj",
               "RelativeToolTip": "Spear.API\\Spear.API.csproj",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2026-04-28T09:03:31.035Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-28T09:03:31.035Z"
             }
           ]
         }

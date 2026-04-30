@@ -7,9 +7,22 @@ const SPRITE_FRAME_H     = 512
 const SPRITE_RUN_START   = 0    // frames 0-54   → running (frame001-frame055)
 const SPRITE_RUN_COUNT   = 55
 const SPRITE_THROW_START = 55   // frames 55-115 → throw   (frame056-frame116)
-const SPRITE_THROW_COUNT = 61
-const SPRITE_PANT_START  = 116  // frames 116-127 → panting (frame117-frame128)
-const SPRITE_PANT_COUNT  = 12
+const SPRITE_THROW_COUNT = 73
+const SPRITE_PANT_START       = 128  // frames 116-127 → panting (frame117-frame128)
+const SPRITE_PANT_COUNT       = 17
+const SPRITE_SWAY_START       = 146  // frames 146-192 → idle sway (alternates with panting)
+const SPRITE_SWAY_COUNT       = 47
+const SPRITE_SWAY_DELAY_MS    = 1000  // pause at frame 192 before reversing
+// Feet in panting/after-crash frames sit higher in the cell than running frames.
+// These offsets (source px out of 512) push groundY down to realign feet.
+const SPRITE_PANT_FOOT_GAP       = 23   // 511 - 488
+const SPRITE_AFTERCRASH_START    = 193
+const SPRITE_AFTERCRASH_COUNT    = 8
+// Per-frame character heights (px in 512-cell) for frames 193-200.
+// Used to lock display height to the running reference (402px avg) via per-frame scale.
+const SPRITE_AFTERCRASH_CONTENT_H = [450, 444, 440, 435, 432, 410, 412, 422]
+const SPRITE_AFTERCRASH_FOOT_GAP  = 26   // 511 - 485 (avg foot bottom)
+const SPRITE_RUN_CONTENT_H        = 402
 const SPRITE_DISPLAY_H   = 140  // canvas draw height in px
 const SPRITE_GROUND_SINK = 10   // px to push feet below the ground line — increase if floating
 
@@ -1772,6 +1785,7 @@ export default function CrashGraph({ phase, multiplier, crashPoint, countdown })
   const crashSpearRef      = useRef(null)
   const crashImpactFiredRef = useRef(false)
   const costumeRef         = useRef(null)
+  const spearIdleRef       = useRef(null)
   const spriteRef       = useRef(null)
   const spearImgRef     = useRef(null)
   useEffect(() => {
@@ -1796,53 +1810,81 @@ export default function CrashGraph({ phase, multiplier, crashPoint, countdown })
     if (phase === 'waiting') {
       pointsRef.current = []; startRef.current = null; crashTimeRef.current = null
       trailRef.current = []; particlesRef.current = []
-      scrollRef.current = 0   // background is fully static during the countdown
-
       // Pick a new random costume once per round (costumeRef is reset to null by the crashed phase)
-      if (costumeRef.current === null) costumeRef.current = Math.floor(Math.random() * COSTUMES.length)
+      if (costumeRef.current === null) {
+        costumeRef.current  = Math.floor(Math.random() * COSTUMES.length)
+        scrollRef.current   = 0
+        legPhaseRef.current = 0
+        ringTimerRef.current = 0   // smooth linearFrac tracker (reused from running phase)
+      }
       applyCostume(costumeRef.current)
 
-      // countdown ticks every 100 ms, which re-runs this effect each tick.
-      // To avoid jumps on every re-run, derive figX / legPhase
-      // deterministically from cdVal rather than accumulating them.
+      // legPhase and scroll both accumulate per-frame with dt and persist across the
+      // 100 ms effect re-runs (countdown prop changes), giving smooth 60 fps animation.
       const loop = (ts) => {
         tRef.current++
+        const dt = lastTsRef.current ? ts - lastTsRef.current : 16
         lastTsRef.current = ts
+
         const { width: w, height: h } = canvas
         const scale   = Math.min(1, Math.max(0.6, h / 320))
         const spriteH = Math.round(SPRITE_DISPLAY_H * scale)
         const gY = h - PAD_B
 
         const cdVal    = typeof countdown === 'number' ? countdown : 5
-        const APPEAR_AT = 1   // seconds remaining when the person enters from the left
+        const CD_TOTAL = 5
+        const figX     = PAD_L + 30
+        figXRef.current = figX
 
-        // Figure runs from the left edge to the throw position over the final 1 second
-        const THROW_X  = PAD_L + 30
-        const START_X  = -60
-        const runFrac  = Math.min(1, Math.max(0, (APPEAR_AT - cdVal) / APPEAR_AT))
-        const figX     = START_X + (THROW_X - START_X) * runFrac
-        figXRef.current = figX   // carry into the throw phase
+        // ── Speed model ───────────────────────────────────────────────────────
+        // Ground speed (canvas px / ms) ramps linearly from slow jog → full sprint.
+        const V_JOG    = 0.22   // slow jog  : 3.5 px/frame, near-trees 1.75 px/frame
+        const V_SPRINT = 1.00   // full sprint: 16 px/frame, near-trees 8 px/frame
 
-        // 0.014/ms ≈ full-sprint cadence (~2.2 leg cycles over the 1-second run)
-        const legPhase = runFrac * APPEAR_AT * 1000 * 0.014
-        // scrollRef stays 0 — background is completely frozen throughout
+        // cdVal steps every 100 ms, which would make v, lean, and bounce amplitude
+        // all snap to new values every 6 frames.  Exponential smoothing (τ=150 ms)
+        // turns those discrete steps into a continuous ramp — no visible jumps.
+        const targetFrac = Math.min(1, Math.max(0, (CD_TOTAL - cdVal) / CD_TOTAL))
+        ringTimerRef.current += (targetFrac - ringTimerRef.current) * (1 - Math.exp(-dt / 150))
+        const linearFrac = ringTimerRef.current
+        const v = V_JOG + (V_SPRINT - V_JOG) * linearFrac
 
-        // Vertical bounce: CoM rises ~6 px during flight phase (s≈0) and drops at
-        // foot-strike (s≈±1).  This is the primary cue that sells running speed
-        // without any background motion.
-        const s       = Math.sin(legPhase)
-        const bounceY = (1 - Math.abs(s)) * 6
+        // Background moves at the character's ground speed (px / ms)
+        scrollRef.current += dt * v
+
+        // ── Sprite frame rate ─────────────────────────────────────────────────
+        // Advancing legPhase as v gives a 4.7× rate swing (jog→sprint) which
+        // makes the sprite look frozen at low speed and skip frames at high speed.
+        // Using v^0.6 compresses that to a 1.9× swing, keeping the animation in
+        // the natural-looking range across the full countdown:
+        //   jog   (v=0.22): ~0.7 frames/RAF  → cycle ≈ 1.3 s  ✓
+        //   sprint (v=1.00): ~1.9 frames/RAF  → cycle ≈ 0.5 s  ✓
+        const LEG_K = 75.3   // tuned so sprint → 1.5 frames/RAF
+        legPhaseRef.current += dt * Math.pow(v, 0.6) / LEG_K
+
+        // ── Body-bob ──────────────────────────────────────────────────────────
+        // cos²(φ) peaks at legPhase=0,π (flight frames 0,27) and is 0 at π/2,3π/2
+        // (contact frames 13,41) — matching the sprite's gait phase convention.
+        const bounceY = Math.pow(Math.cos(legPhaseRef.current), 2) * 7 * (0.45 + 0.55 * linearFrac)
+
+        // ── Forward lean grows with speed ─────────────────────────────────────
+        // Rotate around the feet so the character tilts into the sprint naturally.
+        const leanAngle = Math.pow(linearFrac, 1.5) * 0.18   // 0 → ~10.3° at full sprint
 
         drawBackground(ctx, w, h, scrollRef.current)
         drawSpeedLines(ctx, w, h, scrollRef.current)
         drawAxes(ctx, w, h, 2.0)
         drawGround(ctx, w, h, scrollRef.current)
 
-        // Person only visible for the final second of the countdown
-        if (cdVal <= APPEAR_AT) {
-          const runFrame = Math.floor(legPhase * 4) % SPRITE_RUN_COUNT
-          drawSpriteFrame(ctx, spriteRef.current, SPRITE_RUN_START + runFrame, figX, gY - bounceY, spriteH)
-        }
+        const runFrame = Math.floor(legPhaseRef.current * (SPRITE_RUN_COUNT / (2 * Math.PI))) % SPRITE_RUN_COUNT
+        const groundSink = Math.round(SPRITE_GROUND_SINK * spriteH / SPRITE_DISPLAY_H)
+        const feetY = gY - bounceY + groundSink
+        ctx.save()
+        ctx.translate(figX, feetY)
+        ctx.rotate(-leanAngle)
+        ctx.translate(-figX, -feetY)
+        drawSpriteFrame(ctx, spriteRef.current, SPRITE_RUN_START + runFrame, figX, gY - bounceY, spriteH)
+        ctx.restore()
 
         // Countdown: 5 → 4 → 3 → 2 → 1
         const cdDisplay    = Math.ceil(cdVal)
@@ -1871,7 +1913,7 @@ export default function CrashGraph({ phase, multiplier, crashPoint, countdown })
       startRef.current = performance.now() - knownElapsed
       trailRef.current = []; particlesRef.current = []; ringTimerRef.current = 0
       hoopRef.current = []; hoopSpawnTimerRef.current = 1200
-      legPhaseRef.current = 0
+      legPhaseRef.current = 0; spearIdleRef.current = null
 
       // Carry the waiting-phase costume through, or pick one if joining mid-round
       if (costumeRef.current === null) costumeRef.current = Math.floor(Math.random() * COSTUMES.length)
@@ -2009,10 +2051,42 @@ export default function CrashGraph({ phase, multiplier, crashPoint, countdown })
           }
           drawParticles(ctx, particlesRef.current)
 
-          const pantCycle = SPRITE_PANT_COUNT * 2 - 2
-          const pantT     = Math.floor(Date.now() / 83) % pantCycle
-          const pantFrame = pantT < SPRITE_PANT_COUNT ? pantT : pantCycle - pantT
-          drawSpriteFrame(ctx, spriteRef.current, SPRITE_PANT_START + pantFrame, figX, gY, spriteH)
+          // Alternate between panting and sway while spear is flying
+          // Randomly alternate panting (1-4 cycles) and sway (one round-trip)
+          const PANT_ONE_MS    = (SPRITE_PANT_COUNT * 2 - 2) * 83              // one pant ping-pong
+          const SWAY_FWD_MS    = SPRITE_SWAY_COUNT * 83                       // forward leg
+          const SWAY_RT_MS     = SWAY_FWD_MS * 2 + SPRITE_SWAY_DELAY_MS      // fwd + hold + back
+          const groundY        = gY + Math.round(spriteH * SPRITE_PANT_FOOT_GAP / 512)
+          const now            = Date.now()
+          if (!spearIdleRef.current)
+            spearIdleRef.current = { mode: 'pant', start: now, cyclesLeft: Math.ceil(Math.random() * 4) }
+          const idle = spearIdleRef.current
+          const ageMs = now - idle.start
+          if (idle.mode === 'pant') {
+            if (ageMs >= idle.cyclesLeft * PANT_ONE_MS) {
+              idle.mode = 'sway'; idle.start = now
+              drawSpriteFrame(ctx, spriteRef.current, SPRITE_SWAY_START, figX, groundY, spriteH)
+            } else {
+              const pc = SPRITE_PANT_COUNT * 2 - 2
+              const pf = Math.floor(ageMs / 83) % pc
+              drawSpriteFrame(ctx, spriteRef.current, SPRITE_PANT_START + (pf < SPRITE_PANT_COUNT ? pf : pc - pf), figX, groundY, spriteH)
+            }
+          } else {
+            if (ageMs >= SWAY_RT_MS) {
+              idle.mode = 'pant'; idle.start = now; idle.cyclesLeft = Math.ceil(Math.random() * 4)
+              drawSpriteFrame(ctx, spriteRef.current, SPRITE_PANT_START, figX, groundY, spriteH)
+            } else {
+              let sf
+              if (ageMs < SWAY_FWD_MS) {
+                sf = Math.floor(ageMs / 83)                                              // forward
+              } else if (ageMs < SWAY_FWD_MS + SPRITE_SWAY_DELAY_MS) {
+                sf = SPRITE_SWAY_COUNT - 1                                               // hold at 192
+              } else {
+                sf = Math.max(0, SPRITE_SWAY_COUNT - 1 - Math.floor((ageMs - SWAY_FWD_MS - SPRITE_SWAY_DELAY_MS) / 83))  // backward
+              }
+              drawSpriteFrame(ctx, spriteRef.current, SPRITE_SWAY_START + sf, figX, groundY, spriteH)
+            }
+          }
 
           // Multiplier label — offset perpendicular to spear (upper-left side), clamped to canvas
           const label = `${curM.toFixed(2)}x`
@@ -2200,13 +2274,12 @@ export default function CrashGraph({ phase, multiplier, crashPoint, countdown })
         ctx.fillStyle = vig
         ctx.fillRect(0, 0, w, h)
 
-        // Sprite panting (with shake to feel the impact)
+        // After-crash animation: plays once then holds on last frame
         ctx.save()
         ctx.translate(shakeX, shakeY)
-        const pantCycle = SPRITE_PANT_COUNT * 2 - 2
-        const pantT     = Math.floor(Date.now() / 83) % pantCycle
-        const pantFrame = pantT < SPRITE_PANT_COUNT ? pantT : pantCycle - pantT
-        drawSpriteFrame(ctx, spriteRef.current, SPRITE_PANT_START + pantFrame, figX, gY, spriteH)
+        const acFrame = Math.min(Math.floor(age * 1000 / 42), SPRITE_AFTERCRASH_COUNT - 1)
+        const acH     = Math.round(spriteH * SPRITE_RUN_CONTENT_H / SPRITE_AFTERCRASH_CONTENT_H[acFrame])
+        drawSpriteFrame(ctx, spriteRef.current, SPRITE_AFTERCRASH_START + acFrame, figX, gY + Math.round(spriteH * SPRITE_AFTERCRASH_FOOT_GAP / 512), acH)
         ctx.restore()
 
         // ── "Rise is over" — punch-in + steady glow ──

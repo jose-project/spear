@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Spear.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+35e0eee2ea6c7ea51d1165ba06e0ef73d2022636")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5795266972bdb78bc376aee7300c5089845d39fa")]
 [assembly: System.Reflection.AssemblyProductAttribute("Spear.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Spear.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
