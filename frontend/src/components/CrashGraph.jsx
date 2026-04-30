@@ -1793,7 +1793,7 @@ export default function CrashGraph({ phase, multiplier, crashPoint, countdown })
     const resize = () => { const r = canvas.parentElement.getBoundingClientRect(); canvas.width = r.width; canvas.height = r.height }
     resize(); window.addEventListener('resize', resize)
     const img = new Image()
-    img.src = '/spear-character.png'
+    img.src = '/spear-character-v2.png'
     img.onload = () => { spriteRef.current = img }
     const spearImg = new Image()
     spearImg.src = '/spear-flying.png'
